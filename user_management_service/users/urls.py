@@ -16,7 +16,6 @@ urlpatterns = [
     path('permissions/<uuid:id>/', PermissionDetailView.as_view(), name='permission-detail'),
     path('activity-logs/', ActivityLogView.as_view(), name='activity-log-list'),
     
-    # Auth endpoints
     path('auth/login/', LoginView.as_view(), name='auth-login'),
     path('auth/verify-otp/', VerifyOTPView.as_view(), name='auth-verify-otp'),
     path('auth/resend-otp/', ResendOTPView.as_view(), name='auth-resend-otp'),
