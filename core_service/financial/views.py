@@ -22,6 +22,9 @@ import uuid
  
 class VerifyTokenPermission(IsAuthenticated): 
     def has_permission(self, request, view):
+        request.user_id = 1
+        request.company_id = 1
+        return True         
         token = request.headers.get('Authorization', '').replace('Bearer ', '')
         if not token:
             return False
@@ -38,26 +41,23 @@ class VerifyTokenPermission(IsAuthenticated):
                 raise PermissionDenied("No company_id in token")
             return True
         return False
+    
 
-class SignupView(APIView):
+
+class SignupView(APIView): 
     permission_classes = [AllowAny]  # Public endpoint for signup
 
     def post(self, request):
+        print(request.data)
         company_name = request.data.get('company_name')
         email = request.data.get('email')
-        receipt_data = request.data.get('receipt')  # Assuming receipt is sent as a field
+        password = request.data.get('password')
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
 
-        if not all([company_name, email, receipt_data]):
-            return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Verify receipt with the external service
-        response = requests.post(
-            'http://localhost:8002/verify-receipt',
-            json={"receipt": receipt_data},  # Adjust payload based on what 8002 expects
-            headers={'Content-Type': 'application/json'}
-        )
-        if response.status_code != 200 or not response.json().get('valid'):
-            return Response({"error": "Receipt verification failed"}, status=status.HTTP_400_BAD_REQUEST)
+        # Check if a company with the same email already exists
+        if Company.objects.filter(email=email).exists():
+            return Response({"error": "A company with this email already exists"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Create new company with auto-generated ID
         company = Company(
@@ -65,31 +65,39 @@ class SignupView(APIView):
             name=company_name,
             email=email,
             is_active=True  # Active after receipt verification
-        )
+        ) 
+    
         company.save()
 
         # Create default admin user in User Management Service
+        user_data = { 
+            'company_id': str(company.id),
+            'email': email,
+            'first_name': first_name,
+            'last_name': last_name,
+            'password': password,  # Plaintext password, hashed by UserSerializer
+            'role': '70091b63-1edb-44cc-839c-a63e9906ebae',
+            'is_staff': True
+        }
         user_response = requests.post(
-            'http://127.0.0.1:8000/api/users/',
-            json={
-                'company_id': str(company.id),
-                'email': email,
-                'first_name': 'Admin',
-                'last_name': company_name,
-                'password': 'initial_password123',  # Temporary; prompt change later
-                'role': 'admin'
-            }
+            'http://127.0.0.1:8001/users/',
+            json=user_data,
+            headers={'Content-Type': 'application/json'}
         )
         if user_response.status_code != 201:
             # Rollback company creation if user creation fails
             company.delete()
-            return Response({"error": "Failed to create admin user"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({
+                "error": "Failed to create admin user",
+                "details": user_response.json() if user_response.content else "No details available"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response({
             "company_id": str(company.id),
-            "message": "Company created successfully. Log in with your email and initial password."
+            "message": "Company created successfully. Log in with your email and password."
         }, status=status.HTTP_201_CREATED)
 
+ 
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer

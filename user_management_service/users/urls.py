@@ -21,4 +21,4 @@ urlpatterns = [
     path('auth/resend-otp/', ResendOTPView.as_view(), name='auth-resend-otp'),
     path('auth/refresh-token/', RefreshTokenView.as_view(), name='auth-refresh-token'),
     path('auth/verify-token/', VerifyTokenView.as_view(), name='auth-verify-token'),
-]
+    ] 

@@ -12,7 +12,7 @@ class UserListView(APIView):
   @swagger_auto_schema(
       operation_summary="List users",
       operation_description="Get a list of all users",
-      tags=['Users'],
+      tags=['Users'], 
       responses={
           200: UserSerializer(many=True)
       }
@@ -22,7 +22,7 @@ class UserListView(APIView):
     serializer = UserSerializer(users, many=True)
     return Response(data=serializer.data, status=status.HTTP_200_OK)
   
-  @swagger_auto_schema(
+  @swagger_auto_schema( 
       operation_summary="Create user",
       operation_description="Create a new user",
       tags=['Users'],
@@ -32,7 +32,10 @@ class UserListView(APIView):
           400: 'Bad Request'
       }
   )
+
+
   def post(self, request: Request):
+    print(request.data,11)
     serializer = UserSerializer(data = request.data)
     if serializer.is_valid():
       serializer.save()

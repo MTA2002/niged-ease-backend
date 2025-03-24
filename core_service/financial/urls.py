@@ -4,7 +4,7 @@ from .views import (
     PaymentModeViewSet, CurrencyViewSet, SubscriptionPlanViewSet, CompanyViewSet,
     SaleViewSet, SaleItemViewSet, PurchaseViewSet, PurchaseItemViewSet,
     ExpenseCategoryViewSet, ExpenseViewSet, PayableViewSet, ReceivableViewSet,
-    BankViewSet, PaymentOutViewSet, PaymentInViewSet, ReportViewSet
+    BankViewSet, PaymentOutViewSet, PaymentInViewSet, ReportViewSet, SignupView
 )
 
 router = DefaultRouter()
@@ -27,4 +27,5 @@ router.register(r'reports', ReportViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('signup/', SignupView.as_view(), name='signup'),
 ]
