@@ -1,5 +1,7 @@
 from django.db import models
 import uuid 
+from decimal import Decimal
+from inventory.models.inventory import Inventory
 
 class Sale(models.Model):
 
@@ -17,3 +19,21 @@ class Sale(models.Model):
   class Meta:
     db_table = 'sales'
     ordering = ['-created_at']
+
+  def update_inventory(self, sale_items):
+    """
+    Update inventory quantities based on sale items.
+    Decreases inventory quantities for each product sold.
+    """
+    for item in sale_items:
+      try:
+        inventory = Inventory.objects.get(
+          product=item.product,
+          store=self.store
+        )
+        inventory.quantity -= item.quantity
+        if inventory.quantity < 0:
+          raise ValueError(f"Insufficient inventory for product {item.product.name}")
+        inventory.save()
+      except Inventory.DoesNotExist:
+        raise ValueError(f"No inventory record found for product {item.product.name} in store {self.store.name}")

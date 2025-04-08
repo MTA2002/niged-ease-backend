@@ -4,11 +4,20 @@ import uuid
 class SaleItem(models.Model):
 
   id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-  sale_id = models.ForeignKey('transactions.Sale', on_delete=models.CASCADE)
-  product_id = models.ForeignKey('inventory.Product', on_delete=models.CASCADE)
-  quantity = models.IntegerField()
+  sale = models.ForeignKey(
+    'transactions.Sale',
+    on_delete=models.CASCADE,
+    related_name='items'
+  )
+  product = models.ForeignKey(
+    'inventory.Product',
+    on_delete=models.CASCADE,
+    related_name='sale_items'
+  )
+  quantity = models.DecimalField(max_digits=19, decimal_places=4)
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
 
   class Meta:
     db_table = 'sale_items'
+    ordering = ['-created_at']

@@ -23,13 +23,13 @@ urlpatterns = [
     
     # Sale URLs
     path('sales/', SaleListView.as_view(), name='sale-list'),
-    path('sales/<int:id>/', SaleDetailView.as_view(), name='sale-detail'),
-    path('sales/<int:sale_id>/items/', SaleItemListView.as_view(), name='sale-item-list'),
-    path('sales/<int:sale_id>/items/<int:item_id>/', SaleItemDetailView.as_view(), name='sale-item-detail'),
+    path('sales/<uuid:id>/', SaleDetailView.as_view(), name='sale-detail'),
+    path('sales/<uuid:sale_id>/items/', SaleItemListView.as_view(), name='sale-item-list'),
+    path('sales/<uuid:sale_id>/items/<int:item_id>/', SaleItemDetailView.as_view(), name='sale-item-detail'),
     
     # Purchase URLs
     path('purchases/', PurchaseListView.as_view(), name='purchase-list'),
-    path('purchases/<int:id>/', PurchaseDetailView.as_view(), name='purchase-detail'),
-    path('purchases/<int:purchase_id>/items/', PurchaseItemListView.as_view(), name='purchase-item-list'),
-    path('purchases/<int:purchase_id>/items/<int:item_id>/', PurchaseItemDetailView.as_view(), name='purchase-item-detail'),
+    path('purchases/<uuid:id>/', PurchaseDetailView.as_view(), name='purchase-detail'),
+    path('purchases/<uuid:purchase_id>/items/', PurchaseItemListView.as_view(), name='purchase-item-list'),
+    path('purchases/<uuid:purchase_id>/items/<int:item_id>/', PurchaseItemDetailView.as_view(), name='purchase-item-detail'),
 ] 

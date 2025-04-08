@@ -1,5 +1,7 @@
 from django.db import models
 import uuid 
+from decimal import Decimal
+from inventory.models.inventory import Inventory
 
 class Purchase(models.Model):
 
@@ -17,3 +19,24 @@ class Purchase(models.Model):
   class Meta:
     db_table = 'purchases'
     ordering = ['-created_at']
+
+  def update_inventory(self, purchase_items):
+    """
+    Update inventory quantities based on purchase items.
+    Increases inventory quantities for each product purchased.
+    """
+    for item in purchase_items:
+      try:
+        inventory = Inventory.objects.get(
+          product=item.product,
+          store=self.store
+        )
+        inventory.quantity += item.quantity
+        inventory.save()
+      except Inventory.DoesNotExist:
+        # If inventory doesn't exist, create a new record
+        Inventory.objects.create(
+          product=item.product,
+          store=self.store,
+          quantity=item.quantity
+        )

@@ -38,14 +38,24 @@ class SaleListView(APIView):
             sale = sale_serializer.save()
             
             # Create sale items
+            sale_items = []
             for item_data in sale_items_data:
                 item_data['sale'] = sale.id
                 item_serializer = SaleItemSerializer(data=item_data)
                 if item_serializer.is_valid():
-                    item_serializer.save()
+                    sale_item = item_serializer.save()
+                    sale_items.append(sale_item)
                 else:
                     sale.delete()  # Rollback if item creation fails
                     return Response(item_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                # Update inventory after all items are created
+                sale.update_inventory(sale_items)
+            except ValueError as e:
+                # Rollback the sale if inventory update fails
+                sale.delete()
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
             return Response(sale_serializer.data, status=status.HTTP_201_CREATED)
         return Response(sale_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -94,13 +104,23 @@ class SaleDetailView(APIView):
             SaleItem.objects.filter(sale=sale).delete()
             
             # Create new items
+            sale_items = []
             for item_data in sale_items_data:
                 item_data['sale'] = sale.id
                 item_serializer = SaleItemSerializer(data=item_data)
                 if item_serializer.is_valid():
-                    item_serializer.save()
+                    sale_item = item_serializer.save()
+                    sale_items.append(sale_item)
                 else:
                     return Response(item_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                # Update inventory after all items are created
+                sale.update_inventory(sale_items)
+            except ValueError as e:
+                # Rollback the sale if inventory update fails
+                sale.delete()
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
             return Response(sale_serializer.data, status=status.HTTP_200_OK)
         return Response(sale_serializer.errors, status=status.HTTP_400_BAD_REQUEST)

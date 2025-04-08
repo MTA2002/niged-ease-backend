@@ -38,14 +38,24 @@ class PurchaseListView(APIView):
             purchase = purchase_serializer.save() 
             
             # Create purchase items
+            purchase_items = []
             for item_data in purchase_items_data:
                 item_data['purchase'] = purchase.id 
                 item_serializer = PurchaseItemSerializer(data=item_data)
                 if item_serializer.is_valid():
-                    item_serializer.save()
+                    purchase_item = item_serializer.save()
+                    purchase_items.append(purchase_item)
                 else:
                     purchase.delete()  # Rollback if item creation fails
                     return Response(item_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                # Update inventory after all items are created
+                purchase.update_inventory(purchase_items)
+            except ValueError as e:
+                # Rollback the purchase if inventory update fails
+                purchase.delete()
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
             return Response(purchase_serializer.data, status=status.HTTP_201_CREATED)
         return Response(purchase_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -94,13 +104,23 @@ class PurchaseDetailView(APIView):
             PurchaseItem.objects.filter(purchase=purchase).delete()
             
             # Create new items
+            purchase_items = []
             for item_data in purchase_items_data:
                 item_data['purchase'] = purchase.id
                 item_serializer = PurchaseItemSerializer(data=item_data)
                 if item_serializer.is_valid():
-                    item_serializer.save()
+                    purchase_item = item_serializer.save()
+                    purchase_items.append(purchase_item)
                 else:
                     return Response(item_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                # Update inventory after all items are created
+                purchase.update_inventory(purchase_items)
+            except ValueError as e:
+                # Rollback the purchase if inventory update fails
+                purchase.delete()
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
             return Response(purchase_serializer.data, status=status.HTTP_200_OK)
         return Response(purchase_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
