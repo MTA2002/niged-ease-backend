@@ -1,14 +1,13 @@
 import os
 from pathlib import Path
-from environ import Env
 
-env = Env()
-Env.read_env()
+from dotenv import load_dotenv
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = env.str('SECRET_KEY', default='-asdf&*YJHKP908yuik')
-DEBUG = env.bool('DEBUG', default=True)
+SECRET_KEY = os.getenv('SECRET_KEY', default='-asdf&*YJHKP908yuik')
+DEBUG = os.getenv('DEBUG', default=True)
 
 ALLOWED_HOSTS = ['*']
 
@@ -21,9 +20,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'drf_yasg',
-    'financial.apps.FinancialConfig',
-    'product.apps.ProductConfig',
-    'inventory.apps.InventoryConfig',
+    'companies',
+    'transactions',
+    'financials',
+    'inventory',
 ]
 
 MIDDLEWARE = [
@@ -59,20 +59,17 @@ WSGI_APPLICATION = 'core_service.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'user_management'),
-        'USER': os.getenv('DB_USER', 'user'),
-        'PASSWORD': os.getenv('DB_PASSWORD', '123'), 
+        'NAME': os.getenv('DB_NAME', 'core_service'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'), 
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
 }
 

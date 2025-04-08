@@ -1,0 +1,85 @@
+from django.http import Http404
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.request import Request
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from financials.models.receivable import Receivable
+from financials.serializers.receivable import ReceivableSerializer
+
+
+class ReceivableListView(APIView):
+    @swagger_auto_schema(
+        operation_description="Get a list of all receivables",
+        responses={200: ReceivableSerializer(many=True)}
+    )
+    def get(self, request: Request):
+        receivables = Receivable.objects.all()
+        serializer = ReceivableSerializer(receivables, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+    
+    @swagger_auto_schema(
+        operation_description="Create a new receivable",
+        request_body=ReceivableSerializer,
+        responses={
+            201: ReceivableSerializer,
+            400: "Invalid data"
+        }
+    )
+    def post(self, request: Request):
+        serializer = ReceivableSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReceivableDetailView(APIView):
+    def get_receivable(self, id):
+        try:
+            receivable = Receivable.objects.get(pk=id)
+            return receivable
+        except Receivable.DoesNotExist:
+            raise Http404
+    
+    @swagger_auto_schema(
+        operation_description="Get a specific receivable by ID",
+        responses={
+            200: ReceivableSerializer,
+            404: "Receivable not found"
+        }
+    )
+    def get(self, request: Request, id):
+        receivable = self.get_receivable(id)
+        serializer = ReceivableSerializer(receivable)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        operation_description="Update a receivable",
+        request_body=ReceivableSerializer,
+        responses={
+            200: ReceivableSerializer,
+            400: "Invalid data",
+            404: "Receivable not found"
+        }
+    )
+    def put(self, request: Request, id):
+        receivable = self.get_receivable(id)
+        serializer = ReceivableSerializer(receivable, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_description="Delete a receivable",
+        responses={
+            204: "Receivable deleted successfully",
+            404: "Receivable not found"
+        }
+    )
+    def delete(self, request: Request, id):
+        receivable = self.get_receivable(id)
+        receivable.delete()
+        return Response({'message': 'Receivable deleted successfully'}, status=status.HTTP_204_NO_CONTENT) 
