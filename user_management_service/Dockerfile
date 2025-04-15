@@ -15,4 +15,4 @@ EXPOSE 8000
 
 
 # Run the Django migrations and then the development server when the container launches
-CMD ["sh", "-c", "python manage.py runserver"]
+CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:8000"]
