@@ -4,7 +4,7 @@ import uuid
 from companies.models.company import Company
 from companies.models.currency import Currency
 from financials.models.payable import Payable
-from financials.models.payment_mode import PaymentMode
+from transactions.models.payment_mode import PaymentMode
 from transactions.models.purchase import Purchase
 
 class PaymentOut(models.Model):

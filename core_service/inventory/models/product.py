@@ -1,5 +1,7 @@
 from django.db import models
 import uuid
+from decimal import Decimal
+from inventory.models.store import Store
 
 class Product(models.Model):
 
@@ -15,3 +17,7 @@ class Product(models.Model):
 
   class Meta:
     db_table = 'products'
+
+ 
+    
+    

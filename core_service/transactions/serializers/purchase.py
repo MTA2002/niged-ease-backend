@@ -4,12 +4,12 @@ from companies.serializers.company import CompanySerializer
 from inventory.serializers.store import StoreSerializer
 from transactions.serializers.supplier import SupplierSerializer
 from companies.serializers.currency import CurrencySerializer
-from financials.serializers.payment_mode import PaymentModeSerializer
+from transactions.serializers.payment_mode import PaymentModeSerializer
 from companies.models.company import Company
 from inventory.models.store import Store
 from transactions.models.supplier import Supplier
 from companies.models.currency import Currency
-from financials.models.payment_mode import PaymentMode
+from transactions.models.payment_mode import PaymentMode
 
 
 class PurchaseSerializer(serializers.ModelSerializer):
@@ -62,11 +62,11 @@ class PurchaseSerializer(serializers.ModelSerializer):
             
             if currency_id:
                 currency = Currency.objects.get(id=currency_id)
-                purchase.currency = currency
+                purchase.currency = currency # type: ignore
                 
             if payment_mode_id:
                 payment_mode = PaymentMode.objects.get(id=payment_mode_id)
-                purchase.payment_mode = payment_mode
+                purchase.payment_mode = payment_mode # type: ignore
                 
             purchase.save()
             return purchase

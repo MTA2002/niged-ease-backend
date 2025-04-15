@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from financials.models.payment_mode import PaymentMode
+from transactions.models.payment_mode import PaymentMode
 
 
 class PaymentModeSerializer(serializers.ModelSerializer):

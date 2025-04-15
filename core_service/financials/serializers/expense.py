@@ -4,18 +4,17 @@ from financials.serializers.expense_category import ExpenseCategorySerializer
 
 
 class ExpenseSerializer(serializers.ModelSerializer):
-    category = ExpenseCategorySerializer(read_only=True)
-    category_id = serializers.UUIDField(write_only=True)
 
     class Meta:
         model = Expense
         fields = [
             'id',
             'company',
-            'category',
-            'category_id',
+            'expense_category',
             'amount',
             'description',
+            'currency',
+            'payment_mode',
             'created_at',
             'updated_at'
         ]

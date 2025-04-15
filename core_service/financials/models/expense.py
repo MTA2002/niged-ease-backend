@@ -4,7 +4,7 @@ import uuid
 from companies.models.company import Company
 from companies.models.currency import Currency
 from financials.models.expense_category import ExpenseCategory
-from financials.models.payment_mode import PaymentMode
+from transactions.models.payment_mode import PaymentMode
 
 
 class Expense(models.Model):

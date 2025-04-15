@@ -1,5 +1,5 @@
 from django.urls import path
-from financials.views.payment_mode import PaymentModeListView, PaymentModeDetailView
+from transactions.views.payment_mode import PaymentModeListView, PaymentModeDetailView
 from financials.views.expense_category import ExpenseCategoryListView, ExpenseCategoryDetailView
 from financials.views.expense import ExpenseListView, ExpenseDetailView
 from financials.views.payable import PayableListView, PayableDetailView
@@ -10,10 +10,6 @@ from financials.views.payment_out import PaymentOutListView, PaymentOutDetailVie
 app_name = 'financials'
 
 urlpatterns = [
-    # Payment Mode URLs
-    path('payment-modes/', PaymentModeListView.as_view(), name='payment-mode-list'),
-    path('payment-modes/<uuid:id>/', PaymentModeDetailView.as_view(), name='payment-mode-detail'),
-    
     # Expense Category URLs
     path('expense-categories/', ExpenseCategoryListView.as_view(), name='expense-category-list'),
     path('expense-categories/<uuid:id>/', ExpenseCategoryDetailView.as_view(), name='expense-category-detail'),

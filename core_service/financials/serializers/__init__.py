@@ -1,6 +1,6 @@
 from financials.serializers.expense_category import ExpenseCategorySerializer
 from financials.serializers.expense import ExpenseSerializer
-from financials.serializers.payment_mode import PaymentModeSerializer
+from transactions.serializers.payment_mode import PaymentModeSerializer
 from financials.serializers.payable import PayableSerializer
 from financials.serializers.receivable import ReceivableSerializer
 from financials.serializers.payment_in import PaymentInSerializer

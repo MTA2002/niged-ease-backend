@@ -38,7 +38,7 @@ class InventorySerializer(serializers.ModelSerializer):
         except (Product.DoesNotExist, Store.DoesNotExist):
             raise serializers.ValidationError("Invalid product or store ID")
         
-        if product.company != store.company:
+        if product.company != store.company: # type: ignore
             raise serializers.ValidationError(
                 "Product and store must belong to the same company"
             )

@@ -4,6 +4,7 @@ from .sale_item import SaleItem
 from .sale import Sale
 from .purchase_item import PurchaseItem
 from .purchase import Purchase
+from .payment_mode import PaymentMode
 
 __all__ = [
     'Customer',
@@ -11,5 +12,6 @@ __all__ = [
     'SaleItem',
     'Sale',
     'PurchaseItem',
-    'Purchase'
+    'Purchase',
+     'PaymentMode',
 ] 

@@ -23,3 +23,4 @@ class CompanySerializer(serializers.ModelSerializer):
         validated_data['subscription_plan_id'] = validated_data.pop('subscription_plan_id')
         validated_data['currency_id'] = validated_data.pop('currency_id')
         return super().create(validated_data)
+

@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from financials.models.payment_mode import PaymentMode
-from financials.serializers.payment_mode import PaymentModeSerializer
+from transactions.models.payment_mode import PaymentMode
+from transactions.serializers.payment_mode import PaymentModeSerializer
 
 
 class PaymentModeListView(APIView):

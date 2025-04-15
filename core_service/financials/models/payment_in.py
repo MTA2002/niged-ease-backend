@@ -3,9 +3,9 @@ import uuid
 
 from companies.models.company import Company
 from companies.models.currency import Currency
-from financials.models.payment_mode import PaymentMode
+from transactions.models.payment_mode import PaymentMode
 from transactions.models import Sale
-from transactions.models.purchase import Purchase
+from financials.models.receivable import Receivable
 
 class PaymentIn(models.Model):
   
@@ -18,9 +18,9 @@ class PaymentIn(models.Model):
   )
 
   receivable = models.ForeignKey(
-    Purchase,
+    Receivable,
     on_delete=models.CASCADE,
-    related_name='purchase_payment_ins',
+    related_name='receivable_payment_ins',
     null=False
   )
 
