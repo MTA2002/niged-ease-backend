@@ -44,10 +44,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'drf_yasg',
     'corsheaders',
     'users',
     'rest_framework_simplejwt',
+    'drf_spectacular'
 ]
 
 MIDDLEWARE = [
@@ -143,42 +143,19 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Swagger Settings
-SWAGGER_SETTINGS = {
-    'USE_SESSION_AUTH': False,
-    'PERSIST_AUTH': True,
-    'REFETCH_SCHEMA_WITH_AUTH': True,
-    'REFETCH_SCHEMA_ON_LOGOUT': True,
-    'DEFAULT_INFO': 'user_management.urls.schema_view',
-    'APIS_SORTER': 'alpha',
-    'OPERATIONS_SORTER': 'alpha',
-    'JSON_EDITOR': True,
-    'SUPPORTED_SUBMIT_METHODS': [
-        'get',
-        'post',
-        'put',
-        'delete',
-        'patch',
-    ],
-    'VALIDATOR_URL': None,
-    'SWAGGER_UI_SETTINGS': {
-        'filter': False,
-        'persistAuthorization': True,
-        'displayOperationId': False,
-    },
-    'SWAGGER_UI_DIST': 'SIDECAR',  # Use the sidecar instead
-    'SWAGGER_UI_FAVICON_HREF': None,
-    'USE_SESSION_AUTH': False,
-    # Hide top bar
-    'SWAGGER_UI_DOC_EXPANSION': 'list',
-    'SWAGGER_UI_DISABLED_VALIDATOR': True,
-    'SWAGGER_UI_REQUEST_DURATION': True,
-    'SWAGGER_UI_OPERATION_FILTER': None,
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'User Service API',
+    'DESCRIPTION': 'API documentation for User Service',
+    'VERSION': 'v1',
+    'SERVE_INCLUDE_SCHEMA': True,
+    'CONTACT': {'email': 'contact@example.com'},
+    'LICENSE': {'name': 'BSD License'},
+    'TOS': 'https://www.google.com/policies/terms/',
 }
 
 # REST Framework settings
 REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],

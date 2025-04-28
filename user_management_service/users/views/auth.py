@@ -4,69 +4,52 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework import status
 from typing import Dict, Any, cast
-from django.http import QueryDict
 from users.models.user import User
 from users.models.auth import OTP
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from django.contrib.auth.hashers import check_password
 from django.utils.crypto import get_random_string
 from django.core.mail import send_mail
-from rest_framework_simplejwt.tokens import RefreshToken, Token, AccessToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-from rest_framework.parsers import JSONParser
+from drf_spectacular.utils import extend_schema, OpenApiResponse
+from drf_spectacular.types import OpenApiTypes
+
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
-    @swagger_auto_schema(
-        operation_summary="Login with email and password",
-        operation_description="Login with email and password to receive OTP",
+    @extend_schema(
+        summary="Login with email and password",
+        description="Login with email and password to receive OTP",
         tags=['Authentication'],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['email', 'password'],
-            properties={
-                'email': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    format=openapi.FORMAT_EMAIL,
-                    description="User's email address"
-                ),
-                'password': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    format=openapi.FORMAT_PASSWORD,
-                    description="User's password",
-                    min_length=8
-                ),
+        request={
+            'type': 'object',
+            'required': ['email', 'password'],
+            'properties': {
+                'email': {'type': 'string', 'format': 'email', 'description': "User's email address"},
+                'password': {'type': 'string', 'format': 'password', 'description': "User's password", 'minLength': 8}
             }
-        ),
+        },
         responses={
-            200: openapi.Response(
+            200: OpenApiResponse(
                 description='OTP sent successfully',
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'message': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            example="OTP sent to your email"
-                        )
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'message': {'type': 'string', 'example': "OTP sent to your email"}
                     }
-                )
+                }
             ),
-            400: openapi.Response(
+            400: OpenApiResponse(
                 description='Bad Request',
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            example="Invalid credentials"
-                        )
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'error': {'type': 'string', 'example': "Invalid credentials"}
                     }
-                )
+                }
             )
         }
     )
@@ -89,8 +72,8 @@ class LoginView(APIView):
         otp = get_random_string(length=6, allowed_chars='0123456789')
           
         OTP.objects.update_or_create(
-            user=user,  
-            defaults={'otp': otp}  
+            user=user,
+            defaults={'otp': otp}
         )
 
         send_mail(
@@ -103,60 +86,42 @@ class LoginView(APIView):
         
         return Response({"message": "OTP sent to your email"}, status=status.HTTP_200_OK)
 
+
 class VerifyOTPView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
-    @swagger_auto_schema(
-        operation_summary="Verify OTP",
-        operation_description="Verify OTP and get access token",
+    @extend_schema(
+        summary="Verify OTP",
+        description="Verify OTP and get access token",
         tags=['Authentication'],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['email', 'otp'],
-            properties={
-                'email': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    format=openapi.FORMAT_EMAIL,
-                    description="User's email address"
-                ),
-                'otp': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description="6-digit OTP code",
-                    min_length=6,
-                    max_length=6,
-                    pattern='^[0-9]{6}$'
-                ),
+        request={
+            'type': 'object',
+            'required': ['email', 'otp'],
+            'properties': {
+                'email': {'type': 'string', 'format': 'email', 'description': "User's email address"},
+                'otp': {'type': 'string', 'description': "6-digit OTP code", 'minLength': 6, 'maxLength': 6, 'pattern': '^[0-9]{6}$'}
             }
-        ),
+        },
         responses={
-            200: openapi.Response(
+            200: OpenApiResponse(
                 description='Token generated successfully',
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'access': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            example="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-                        ),
-                        'refresh': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            example="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-                        ),
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'access': {'type': 'string', 'example': "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."},
+                        'refresh': {'type': 'string', 'example': "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."}
                     }
-                )
+                }
             ),
-            400: openapi.Response(
+            400: OpenApiResponse(
                 description='Bad Request',
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            example="Invalid OTP"
-                        )
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'error': {'type': 'string', 'example': "Invalid OTP"}
                     }
-                )
+                }
             )
         }
     )
@@ -178,7 +143,7 @@ class VerifyOTPView(APIView):
         if not otp_object:
             return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
         
-        if otp_object.is_expired():  
+        if otp_object.is_expired():
             return Response({"error": "OTP has expired"}, status=status.HTTP_400_BAD_REQUEST)
 
         refresh = RefreshToken.for_user(user)
@@ -189,49 +154,40 @@ class VerifyOTPView(APIView):
             'refresh': str(refresh)
         }, status=status.HTTP_200_OK)
 
+
 class ResendOTPView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
-    @swagger_auto_schema(
-        operation_summary="Resend OTP",
-        operation_description="Resend OTP to email address",
+    @extend_schema(
+        summary="Resend OTP",
+        description="Resend OTP to email address",
         tags=['Authentication'],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['email'],
-            properties={
-                'email': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    format=openapi.FORMAT_EMAIL,
-                    description="User's email address"
-                ),
+        request={
+            'type': 'object',
+            'required': ['email'],
+            'properties': {
+                'email': {'type': 'string', 'format': 'email', 'description': "User's email address"}
             }
-        ),
+        },
         responses={
-            200: openapi.Response(
+            200: OpenApiResponse(
                 description='OTP sent successfully',
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'message': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            example="OTP sent to your email"
-                        )
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'message': {'type': 'string', 'example': "OTP sent to your email"}
                     }
-                )
+                }
             ),
-            400: openapi.Response(
+            400: OpenApiResponse(
                 description='Bad Request',
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            example="User not found"
-                        )
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'error': {'type': 'string', 'example': "User not found"}
                     }
-                )
+                }
             )
         }
     )
@@ -250,8 +206,8 @@ class ResendOTPView(APIView):
         otp = get_random_string(length=6, allowed_chars='0123456789')
           
         OTP.objects.update_or_create(
-            user=user,  
-            defaults={'otp': otp}  
+            user=user,
+            defaults={'otp': otp}
         )
 
         send_mail(
@@ -264,53 +220,41 @@ class ResendOTPView(APIView):
 
         return Response({"message": "OTP sent to your email"}, status=status.HTTP_200_OK)
 
+
 class RefreshTokenView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
-    @swagger_auto_schema(
-        operation_summary="Refresh token",
-        operation_description="Get new access token using refresh token",
+    @extend_schema(
+        summary="Refresh token",
+        description="Get new access token using refresh token",
         tags=['Authentication'],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['refresh_token'],
-            properties={
-                'refresh_token': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description="JWT refresh token",
-                    example="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-                ),
+        request={
+            'type': 'object',
+            'required': ['refresh_token'],
+            'properties': {
+                'refresh_token': {'type': 'string', 'description': "JWT refresh token", 'example': "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."}
             }
-        ),
+        },
         responses={
-            200: openapi.Response(
+            200: OpenApiResponse(
                 description='Token refreshed successfully',
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'access': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            example="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-                        ),
-                        'refresh': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            example="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-                        ),
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'access': {'type': 'string', 'example': "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."},
+                        'refresh': {'type': 'string', 'example': "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."}
                     }
-                )
+                }
             ),
-            400: openapi.Response(
+            400: OpenApiResponse(
                 description='Bad Request',
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            example="Invalid refresh token"
-                        )
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'error': {'type': 'string', 'example': "Invalid refresh token"}
                     }
-                )
+                }
             )
         }
     )
@@ -336,59 +280,42 @@ class RefreshTokenView(APIView):
         except TokenError:
             return Response({"error": "Error occurred with the refresh token"}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class VerifyTokenView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
-    @swagger_auto_schema(
-        operation_summary="Verify token",
-        operation_description="Verify if a JWT token is valid and not blacklisted",
+    @extend_schema(
+        summary="Verify token",
+        description="Verify if a JWT token is valid and not blacklisted",
         tags=['Authentication'],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['token'],
-            properties={
-                'token': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description="JWT token to verify",
-                    example="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-                ),
+        request={
+            'type': 'object',
+            'required': ['token'],
+            'properties': {
+                'token': {'type': 'string', 'description': "JWT token to verify", 'example': "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."}
             }
-        ),
+        },
         responses={
-            200: openapi.Response(
+            200: OpenApiResponse(
                 description='Token is valid',
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'is_valid': openapi.Schema(
-                            type=openapi.TYPE_BOOLEAN,
-                            example=True
-                        ),
-                        'user_id': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            format=openapi.FORMAT_UUID,
-                            example="123e4567-e89b-12d3-a456-426614174000"
-                        ),
-                        'email': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            format=openapi.FORMAT_EMAIL,
-                            example="user@example.com"
-                        )
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'is_valid': {'type': 'boolean', 'example': True},
+                        'user_id': {'type': 'string', 'format': 'uuid', 'example': "123e4567-e89b-12d3-a456-426614174000"},
+                        'email': {'type': 'string', 'format': 'email', 'example': "user@example.com"}
                     }
-                )
+                }
             ),
-            400: openapi.Response(
+            400: OpenApiResponse(
                 description='Invalid token',
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            example="Token is invalid or expired"
-                        )
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'error': {'type': 'string', 'example': "Token is invalid or expired"}
                     }
-                )
+                }
             )
         }
     )
@@ -398,7 +325,7 @@ class VerifyTokenView(APIView):
 
         if not token:
             return Response(
-                {"error": "Token must be provided"}, 
+                {"error": "Token must be provided"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -415,7 +342,6 @@ class VerifyTokenView(APIView):
 
         except (InvalidToken, TokenError, User.DoesNotExist):
             return Response(
-                {"error": "Token is invalid or expired"}, 
+                {"error": "Token is invalid or expired"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
