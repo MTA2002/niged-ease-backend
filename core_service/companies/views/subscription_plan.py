@@ -3,15 +3,14 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from companies.models import SubscriptionPlan
 from companies.serializers.subscription_plan import SubscriptionPlanSerializer
 
 
 class SubscriptionPlanListView(APIView):
-    @swagger_auto_schema(
-        operation_description="Get a list of all subscription plans",
+    @extend_schema(
+        description="Get a list of all subscription plans",
         responses={200: SubscriptionPlanSerializer(many=True)}
     )
     def get(self, request: Request):
@@ -19,12 +18,12 @@ class SubscriptionPlanListView(APIView):
         serializer = SubscriptionPlanSerializer(plans, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
-    @swagger_auto_schema(
-        operation_description="Create a new subscription plan",
-        request_body=SubscriptionPlanSerializer,
+    @extend_schema(
+        description="Create a new subscription plan",
+        request=SubscriptionPlanSerializer,
         responses={
             201: SubscriptionPlanSerializer,
-            400: "Invalid data"
+            400: OpenApiResponse(description="Invalid data")
         }
     )
     def post(self, request: Request):
@@ -43,11 +42,11 @@ class SubscriptionPlanDetailView(APIView):
         except SubscriptionPlan.DoesNotExist:
             raise Http404
     
-    @swagger_auto_schema(
-        operation_description="Get a specific subscription plan by ID",
+    @extend_schema(
+        description="Get a specific subscription plan by ID",
         responses={
             200: SubscriptionPlanSerializer,
-            404: "Subscription plan not found"
+            404: OpenApiResponse(description="Subscription plan not found")
         }
     )
     def get(self, request: Request, id):
@@ -55,13 +54,13 @@ class SubscriptionPlanDetailView(APIView):
         serializer = SubscriptionPlanSerializer(plan)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        operation_description="Update a subscription plan",
-        request_body=SubscriptionPlanSerializer,
+    @extend_schema(
+        description="Update a subscription plan",
+        request=SubscriptionPlanSerializer,
         responses={
             200: SubscriptionPlanSerializer,
-            400: "Invalid data",
-            404: "Subscription plan not found"
+            400: OpenApiResponse(description="Invalid data"),
+            404: OpenApiResponse(description="Subscription plan not found")
         }
     )
     def put(self, request: Request, id):
@@ -72,14 +71,14 @@ class SubscriptionPlanDetailView(APIView):
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        operation_description="Delete a subscription plan",
+    @extend_schema(
+        description="Delete a subscription plan",
         responses={
-            204: "Subscription plan deleted successfully",
-            404: "Subscription plan not found"
+            204: OpenApiResponse(description="Subscription plan deleted successfully"),
+            404: OpenApiResponse(description="Subscription plan not found")
         }
     )
     def delete(self, request: Request, id):
         plan = self.get_plan(id)
         plan.delete()
-        return Response({'message': 'Subscription plan deleted successfully'}, status=status.HTTP_204_NO_CONTENT) 
+        return Response({'message': 'Subscription plan deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

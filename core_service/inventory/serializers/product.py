@@ -12,6 +12,8 @@ class ProductSerializer(serializers.ModelSerializer):
     product_category = ProductCategorySerializer(read_only=True)
     product_unit_id = serializers.UUIDField(write_only=True)
     product_category_id = serializers.UUIDField(write_only=True)
+    color_id = serializers.UUIDField(write_only=True)
+    collection_id = serializers.UUIDField(write_only=True)
     class Meta:
         model = Product
         fields = [
@@ -19,11 +21,14 @@ class ProductSerializer(serializers.ModelSerializer):
             'description', 'image',
             'product_unit', 'product_category',
             'product_unit_id', 'product_category_id',
+            'color_id', 'collection_id',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
         extra_kwargs = {
             'company_id': {'required': True},
+            'color_id': {'required': True},
+            'collection_id': {'required': True},
             'name': {'required': True},
             'product_unit': {'required': True},
             'product_category': {'required': True}

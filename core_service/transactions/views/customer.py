@@ -3,15 +3,14 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from transactions.models.customer import Customer
 from transactions.serializers.customer import CustomerSerializer
 
 
 class CustomerListView(APIView):
-    @swagger_auto_schema(
-        operation_description="Get a list of all customers",
+    @extend_schema(
+        description="Get a list of all customers",
         responses={200: CustomerSerializer(many=True)}
     )
     def get(self, request: Request):
@@ -19,12 +18,12 @@ class CustomerListView(APIView):
         serializer = CustomerSerializer(customers, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
-    @swagger_auto_schema(
-        operation_description="Create a new customer",
-        request_body=CustomerSerializer,
+    @extend_schema(
+        description="Create a new customer",
+        request=CustomerSerializer,
         responses={
             201: CustomerSerializer,
-            400: "Invalid data"
+            400: OpenApiResponse(description="Invalid data")
         }
     )
     def post(self, request: Request):
@@ -43,11 +42,11 @@ class CustomerDetailView(APIView):
         except Customer.DoesNotExist:
             raise Http404
     
-    @swagger_auto_schema(
-        operation_description="Get a specific customer by ID",
+    @extend_schema(
+        description="Get a specific customer by ID",
         responses={
             200: CustomerSerializer,
-            404: "Customer not found"
+            404: OpenApiResponse(description="Customer not found")
         }
     )
     def get(self, request: Request, id):
@@ -55,13 +54,13 @@ class CustomerDetailView(APIView):
         serializer = CustomerSerializer(customer)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        operation_description="Update a customer",
-        request_body=CustomerSerializer,
+    @extend_schema(
+        description="Update a customer",
+        request=CustomerSerializer,
         responses={
             200: CustomerSerializer,
-            400: "Invalid data",
-            404: "Customer not found"
+            400: OpenApiResponse(description="Invalid data"),
+            404: OpenApiResponse(description="Customer not found")
         }
     )
     def put(self, request: Request, id):
@@ -72,14 +71,14 @@ class CustomerDetailView(APIView):
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        operation_description="Delete a customer",
+    @extend_schema(
+        description="Delete a customer",
         responses={
-            204: "Customer deleted successfully",
-            404: "Customer not found"
+            204: OpenApiResponse(description="Customer deleted successfully"),
+            404: OpenApiResponse(description="Customer not found")
         }
     )
     def delete(self, request: Request, id):
         customer = self.get_customer(id)
         customer.delete()
-        return Response({'message': 'Customer deleted successfully'}, status=status.HTTP_204_NO_CONTENT) 
+        return Response({'message': 'Customer deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

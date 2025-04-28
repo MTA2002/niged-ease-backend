@@ -3,15 +3,14 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from financials.models.expense import Expense
 from financials.serializers.expense import ExpenseSerializer
 
 
 class ExpenseListView(APIView):
-    @swagger_auto_schema(
-        operation_description="Get a list of all expenses",
+    @extend_schema(
+        description="Get a list of all expenses",
         responses={200: ExpenseSerializer(many=True)}
     )
     def get(self, request: Request):
@@ -19,12 +18,12 @@ class ExpenseListView(APIView):
         serializer = ExpenseSerializer(expenses, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
-    @swagger_auto_schema(
-        operation_description="Create a new expense",
-        request_body=ExpenseSerializer,
+    @extend_schema(
+        description="Create a new expense",
+        request=ExpenseSerializer,
         responses={
             201: ExpenseSerializer,
-            400: "Invalid data"
+            400: OpenApiResponse(description="Invalid data")
         }
     )
     def post(self, request: Request):
@@ -43,11 +42,11 @@ class ExpenseDetailView(APIView):
         except Expense.DoesNotExist:
             raise Http404
     
-    @swagger_auto_schema(
-        operation_description="Get a specific expense by ID",
+    @extend_schema(
+        description="Get a specific expense by ID",
         responses={
             200: ExpenseSerializer,
-            404: "Expense not found"
+            404: OpenApiResponse(description="Expense not found")
         }
     )
     def get(self, request: Request, id):
@@ -55,13 +54,13 @@ class ExpenseDetailView(APIView):
         serializer = ExpenseSerializer(expense)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        operation_description="Update an expense",
-        request_body=ExpenseSerializer,
+    @extend_schema(
+        description="Update an expense",
+        request=ExpenseSerializer,
         responses={
             200: ExpenseSerializer,
-            400: "Invalid data",
-            404: "Expense not found"
+            400: OpenApiResponse(description="Invalid data"),
+            404: OpenApiResponse(description="Expense not found")
         }
     )
     def put(self, request: Request, id):
@@ -72,14 +71,14 @@ class ExpenseDetailView(APIView):
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        operation_description="Delete an expense",
+    @extend_schema(
+        description="Delete an expense",
         responses={
-            204: "Expense deleted successfully",
-            404: "Expense not found"
+            204: OpenApiResponse(description="Expense deleted successfully"),
+            404: OpenApiResponse(description="Expense not found")
         }
     )
     def delete(self, request: Request, id):
         expense = self.get_expense(id)
         expense.delete()
-        return Response({'message': 'Expense deleted successfully'}, status=status.HTTP_204_NO_CONTENT) 
+        return Response({'message': 'Expense deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

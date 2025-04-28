@@ -1,10 +1,10 @@
+# type: ignore
 from django.http import Http404
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from transactions.models.sale import Sale
 from transactions.models.sale_item import SaleItem
 from transactions.serializers.sale import SaleSerializer
@@ -13,8 +13,8 @@ from inventory.models.inventory import Inventory
 
 
 class SaleListView(APIView):
-    @swagger_auto_schema(
-        operation_description="Get a list of all sales",
+    @extend_schema(
+        description="Get a list of all sales",
         responses={200: SaleSerializer(many=True)}
     )
     def get(self, request: Request):
@@ -22,40 +22,36 @@ class SaleListView(APIView):
         serializer = SaleSerializer(sales, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
-    @swagger_auto_schema(
-        operation_description="Create a new sale",
-        request_body=SaleSerializer,
+    @extend_schema(
+        description="Create a new sale with associated sale items and update inventory",
+        request=SaleSerializer,
         responses={
             201: SaleSerializer,
-            400: "Invalid data"
+            400: OpenApiResponse(description="Invalid data")
         }
     )
     def post(self, request: Request):
-        # Handle nested sale items
-        sale_items_data = request.data.pop('items', []) # type: ignore
+        sale_items_data = request.data.pop('items', []) 
         sale_serializer = SaleSerializer(data=request.data)
         
         if sale_serializer.is_valid():
             sale = sale_serializer.save()
             
-            # Create sale items
             sale_items = []
             for item_data in sale_items_data:
-                item_data['sale'] = sale.id # type: ignore
+                item_data['sale'] = sale.id
                 item_serializer = SaleItemSerializer(data=item_data)
                 if item_serializer.is_valid():
                     sale_item = item_serializer.save()
                     sale_items.append(sale_item)
                 else:
-                    sale.delete()  # type: ignore # Rollback if item creation fails
+                    sale.delete()
                     return Response(item_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
             try:
-                # Update inventory after all items are created
-                sale.update_inventory(sale_items) # type: ignore
+                sale.update_inventory(sale_items)
             except ValueError as e:
-                # Rollback the sale if inventory update fails
-                sale.delete() # type: ignore
+                sale.delete()
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
             return Response(sale_serializer.data, status=status.HTTP_201_CREATED)
@@ -70,11 +66,11 @@ class SaleDetailView(APIView):
         except Sale.DoesNotExist:
             raise Http404
     
-    @swagger_auto_schema(
-        operation_description="Get a specific sale by ID",
+    @extend_schema(
+        description="Get a specific sale by ID",
         responses={
             200: SaleSerializer,
-            404: "Sale not found"
+            404: OpenApiResponse(description="Sale not found")
         }
     )
     def get(self, request: Request, id):
@@ -82,32 +78,27 @@ class SaleDetailView(APIView):
         serializer = SaleSerializer(sale)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        operation_description="Update a sale",
-        request_body=SaleSerializer,
+    @extend_schema(
+        description="Update a sale, including its associated sale items, and update inventory",
+        request=SaleSerializer,
         responses={
             200: SaleSerializer,
-            400: "Invalid data",
-            404: "Sale not found"
+            400: OpenApiResponse(description="Invalid data"),
+            404: OpenApiResponse(description="Sale not found")
         }
     )
     def put(self, request: Request, id):
         sale = self.get_sale(id)
-        
-        # Handle nested sale items
-        sale_items_data = request.data.pop('items', []) # type: ignore
+        sale_items_data = request.data.pop('items', [])
         sale_serializer = SaleSerializer(sale, data=request.data)
         
         if sale_serializer.is_valid():
             sale = sale_serializer.save()
-            
-            # Delete existing items
             SaleItem.objects.filter(sale=sale).delete()
             
-            # Create new items
             sale_items = []
             for item_data in sale_items_data:
-                item_data['sale'] = sale.id # type: ignore
+                item_data['sale'] = sale.id
                 item_serializer = SaleItemSerializer(data=item_data)
                 if item_serializer.is_valid():
                     sale_item = item_serializer.save()
@@ -116,21 +107,19 @@ class SaleDetailView(APIView):
                     return Response(item_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
             try:
-                # Update inventory after all items are created
-                sale.update_inventory(sale_items) # type: ignore
+                sale.update_inventory(sale_items)
             except ValueError as e:
-                # Rollback the sale if inventory update fails
-                sale.delete() # type: ignore
+                sale.delete()
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
             return Response(sale_serializer.data, status=status.HTTP_200_OK)
         return Response(sale_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        operation_description="Delete a sale",
+    @extend_schema(
+        description="Delete a sale",
         responses={
-            204: "Sale deleted successfully",
-            404: "Sale not found"
+            204: OpenApiResponse(description="Sale deleted successfully"),
+            404: OpenApiResponse(description="Sale not found")
         }
     )
     def delete(self, request: Request, id):
@@ -140,25 +129,36 @@ class SaleDetailView(APIView):
 
 
 class SaleItemListView(APIView):
+    @extend_schema(
+        description="Get a list of all sale items for a specific sale",
+        responses={200: SaleItemSerializer(many=True)}
+    )
     def get(self, request: Request, sale_id):
         items = SaleItem.objects.filter(sale_id=sale_id)
         serializer = SaleItemSerializer(items, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
+    @extend_schema(
+        description="Create a new sale item for a specific sale and update inventory",
+        request=SaleItemSerializer,
+        responses={
+            201: SaleItemSerializer,
+            400: OpenApiResponse(description="Invalid data"),
+            404: OpenApiResponse(description="Sale not found")
+        }
+    )
     def post(self, request: Request, sale_id):
         try:
             sale = Sale.objects.get(id=sale_id)
-            request.data['sale'] = sale_id # type: ignore
+            request.data['sale'] = sale_id
             serializer = SaleItemSerializer(data=request.data)
             if serializer.is_valid():
                 sale_item = serializer.save()
                 try:
-                    # Update inventory for the new item
                     sale.update_inventory([sale_item])
                     return Response(data=serializer.data, status=status.HTTP_201_CREATED)
                 except ValueError as e:
-                    # Rollback the sale item if inventory update fails
-                    sale_item.delete() # type: ignore
+                    sale_item.delete()
                     return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Sale.DoesNotExist:
@@ -173,21 +173,36 @@ class SaleItemDetailView(APIView):
         except SaleItem.DoesNotExist:
             raise Http404
     
+    @extend_schema(
+        description="Get a specific sale item by ID",
+        responses={
+            200: SaleItemSerializer,
+            404: OpenApiResponse(description="Sale item not found")
+        }
+    )
     def get(self, request: Request, sale_id, item_id):
         item = self.get_item(sale_id, item_id)
         serializer = SaleItemSerializer(item)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        description="Update a sale item and adjust inventory accordingly",
+        request=SaleItemSerializer,
+        responses={
+            200: SaleItemSerializer,
+            400: OpenApiResponse(description="Invalid data"),
+            404: OpenApiResponse(description="Sale or item not found")
+        }
+    )
     def put(self, request: Request, sale_id, item_id):
         try:
             sale = Sale.objects.get(id=sale_id)
             item = self.get_item(sale_id, item_id)
-            old_quantity = item.quantity  # Store old quantity for inventory adjustment
+            old_quantity = item.quantity
             
-            request.data['sale'] = sale_id # type: ignore
+            request.data['sale'] = sale_id
             serializer = SaleItemSerializer(item, data=request.data)
             if serializer.is_valid():
-                # First, restore the old quantity to inventory
                 try:
                     inventory = Inventory.objects.get(
                         product=item.product,
@@ -201,28 +216,32 @@ class SaleItemDetailView(APIView):
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 
-                # Update the sale item
                 updated_item = serializer.save()
                 
                 try:
-                    # Update inventory with the new quantity
                     sale.update_inventory([updated_item])
                     return Response(data=serializer.data, status=status.HTTP_200_OK)
                 except ValueError as e:
-                    # Rollback the inventory update
-                    inventory.quantity -= updated_item.quantity # type: ignore
+                    inventory.quantity -= updated_item.quantity
                     inventory.save()
                     return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Sale.DoesNotExist:
             return Response({'error': 'Sale not found'}, status=status.HTTP_404_NOT_FOUND)
 
+    @extend_schema(
+        description="Delete a sale item and adjust inventory accordingly",
+        responses={
+            204: OpenApiResponse(description="Sale item deleted successfully"),
+            400: OpenApiResponse(description="Invalid data"),
+            404: OpenApiResponse(description="Sale or item not found")
+        }
+    )
     def delete(self, request: Request, sale_id, item_id):
         try:
             sale = Sale.objects.get(id=sale_id)
             item = self.get_item(sale_id, item_id)
             
-            # Restore the quantity to inventory before deleting
             try:
                 inventory = Inventory.objects.get(
                     product=item.product,
@@ -239,4 +258,4 @@ class SaleItemDetailView(APIView):
             item.delete()
             return Response({'message': 'Sale item deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
         except Sale.DoesNotExist:
-            return Response({'error': 'Sale not found'}, status=status.HTTP_404_NOT_FOUND) 
+            return Response({'error': 'Sale not found'}, status=status.HTTP_404_NOT_FOUND)

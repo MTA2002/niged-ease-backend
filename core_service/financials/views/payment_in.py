@@ -3,15 +3,14 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from financials.models.payment_in import PaymentIn
 from financials.serializers.payment_in import PaymentInSerializer
 
 
 class PaymentInListView(APIView):
-    @swagger_auto_schema(
-        operation_description="Get a list of all incoming payments",
+    @extend_schema(
+        description="Get a list of all incoming payments",
         responses={200: PaymentInSerializer(many=True)}
     )
     def get(self, request: Request):
@@ -19,12 +18,12 @@ class PaymentInListView(APIView):
         serializer = PaymentInSerializer(payments, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
-    @swagger_auto_schema(
-        operation_description="Create a new incoming payment",
-        request_body=PaymentInSerializer,
+    @extend_schema(
+        description="Create a new incoming payment",
+        request=PaymentInSerializer,
         responses={
             201: PaymentInSerializer,
-            400: "Invalid data"
+            400: OpenApiResponse(description="Invalid data")
         }
     )
     def post(self, request: Request):
@@ -43,11 +42,11 @@ class PaymentInDetailView(APIView):
         except PaymentIn.DoesNotExist:
             raise Http404
     
-    @swagger_auto_schema(
-        operation_description="Get a specific incoming payment by ID",
+    @extend_schema(
+        description="Get a specific incoming payment by ID",
         responses={
             200: PaymentInSerializer,
-            404: "Payment not found"
+            404: OpenApiResponse(description="Payment not found")
         }
     )
     def get(self, request: Request, id):
@@ -55,13 +54,13 @@ class PaymentInDetailView(APIView):
         serializer = PaymentInSerializer(payment)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        operation_description="Update an incoming payment",
-        request_body=PaymentInSerializer,
+    @extend_schema(
+        description="Update an incoming payment",
+        request=PaymentInSerializer,
         responses={
             200: PaymentInSerializer,
-            400: "Invalid data",
-            404: "Payment not found"
+            400: OpenApiResponse(description="Invalid data"),
+            404: OpenApiResponse(description="Payment not found")
         }
     )
     def put(self, request: Request, id):
@@ -72,14 +71,14 @@ class PaymentInDetailView(APIView):
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        operation_description="Delete an incoming payment",
+    @extend_schema(
+        description="Delete an incoming payment",
         responses={
-            204: "Payment deleted successfully",
-            404: "Payment not found"
+            204: OpenApiResponse(description="Payment in deleted successfully"),
+            404: OpenApiResponse(description="Payment not found")
         }
     )
     def delete(self, request: Request, id):
         payment = self.get_payment(id)
         payment.delete()
-        return Response({'message': 'Payment in deleted successfully'}, status=status.HTTP_204_NO_CONTENT) 
+        return Response({'message': 'Payment in deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

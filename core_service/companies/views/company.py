@@ -3,15 +3,14 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-from companies.models import Company, SubscriptionPlan
+from drf_spectacular.utils import extend_schema, OpenApiResponse
+from companies.models import Company
 from companies.serializers.company import CompanySerializer
 
 
 class CompanyListView(APIView):
-    @swagger_auto_schema(
-        operation_description="Get a list of all companies",
+    @extend_schema(
+        description="Get a list of all companies",
         responses={200: CompanySerializer(many=True)}
     )
     def get(self, request: Request):
@@ -19,22 +18,12 @@ class CompanyListView(APIView):
         serializer = CompanySerializer(companies, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
-    @swagger_auto_schema(
-        operation_description="Create a new company",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['name', 'short_name', 'address', 'subscription_plan_id', 'currency_id'],
-            properties={
-                'name': openapi.Schema(type=openapi.TYPE_STRING, description='Company name'),
-                'short_name': openapi.Schema(type=openapi.TYPE_STRING, description='Company short name'),
-                'address': openapi.Schema(type=openapi.TYPE_STRING, description='Company address'),
-                'subscription_plan_id': openapi.Schema(type=openapi.TYPE_STRING, format='uuid', description='Subscription plan ID'),
-                'currency_id': openapi.Schema(type=openapi.TYPE_STRING, format='uuid', description='Currency ID'),
-            },
-        ),
+    @extend_schema(
+        description="Create a new company",
+        request=CompanySerializer,
         responses={
             201: CompanySerializer,
-            400: "Invalid data"
+            400: OpenApiResponse(description="Invalid data")
         }
     )
     def post(self, request: Request):
@@ -53,11 +42,11 @@ class CompanyDetailView(APIView):
         except Company.DoesNotExist:
             raise Http404
     
-    @swagger_auto_schema(
-        operation_description="Get a specific company by ID",
+    @extend_schema(
+        description="Get a specific company by ID",
         responses={
             200: CompanySerializer,
-            404: "Company not found"
+            404: OpenApiResponse(description="Company not found")
         }
     )
     def get(self, request: Request, id):
@@ -65,22 +54,13 @@ class CompanyDetailView(APIView):
         serializer = CompanySerializer(company)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        operation_description="Update a company",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'name': openapi.Schema(type=openapi.TYPE_STRING, description='Company name'),
-                'short_name': openapi.Schema(type=openapi.TYPE_STRING, description='Company short name'),
-                'address': openapi.Schema(type=openapi.TYPE_STRING, description='Company address'),
-                'subscription_plan_id': openapi.Schema(type=openapi.TYPE_STRING, format='uuid', description='Subscription plan ID'),
-                'currency_id': openapi.Schema(type=openapi.TYPE_STRING, format='uuid', description='Currency ID'),
-            },
-        ),
+    @extend_schema(
+        description="Update a company",
+        request=CompanySerializer,
         responses={
             200: CompanySerializer,
-            400: "Invalid data",
-            404: "Company not found"
+            400: OpenApiResponse(description="Invalid data"),
+            404: OpenApiResponse(description="Company not found")
         }
     )
     def put(self, request: Request, id):
@@ -91,15 +71,14 @@ class CompanyDetailView(APIView):
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        operation_description="Delete a company",
+    @extend_schema(
+        description="Delete a company",
         responses={
-            204: "Company deleted",
-            404: "Company not found"
+            204: OpenApiResponse(description="Company deleted successfully"),
+            404: OpenApiResponse(description="Company not found")
         }
     )
     def delete(self, request: Request, id):
         company = self.get_company(id)
         company.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
+        return Response({'message': 'Company deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

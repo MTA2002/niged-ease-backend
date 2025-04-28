@@ -3,15 +3,14 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from transactions.models.supplier import Supplier
 from transactions.serializers.supplier import SupplierSerializer
 
 
 class SupplierListView(APIView):
-    @swagger_auto_schema(
-        operation_description="Get a list of all suppliers",
+    @extend_schema(
+        description="Get a list of all suppliers",
         responses={200: SupplierSerializer(many=True)}
     )
     def get(self, request: Request):
@@ -19,12 +18,12 @@ class SupplierListView(APIView):
         serializer = SupplierSerializer(suppliers, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
-    @swagger_auto_schema(
-        operation_description="Create a new supplier",
-        request_body=SupplierSerializer,
+    @extend_schema(
+        description="Create a new supplier",
+        request=SupplierSerializer,
         responses={
             201: SupplierSerializer,
-            400: "Invalid data"
+            400: OpenApiResponse(description="Invalid data")
         }
     )
     def post(self, request: Request):
@@ -43,11 +42,11 @@ class SupplierDetailView(APIView):
         except Supplier.DoesNotExist:
             raise Http404
     
-    @swagger_auto_schema(
-        operation_description="Get a specific supplier by ID",
+    @extend_schema(
+        description="Get a specific supplier by ID",
         responses={
             200: SupplierSerializer,
-            404: "Supplier not found"
+            404: OpenApiResponse(description="Supplier not found")
         }
     )
     def get(self, request: Request, id):
@@ -55,13 +54,13 @@ class SupplierDetailView(APIView):
         serializer = SupplierSerializer(supplier)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        operation_description="Update a supplier",
-        request_body=SupplierSerializer,
+    @extend_schema(
+        description="Update a supplier",
+        request=SupplierSerializer,
         responses={
             200: SupplierSerializer,
-            400: "Invalid data",
-            404: "Supplier not found"
+            400: OpenApiResponse(description="Invalid data"),
+            404: OpenApiResponse(description="Supplier not found")
         }
     )
     def put(self, request: Request, id):
@@ -72,14 +71,14 @@ class SupplierDetailView(APIView):
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        operation_description="Delete a supplier",
+    @extend_schema(
+        description="Delete a supplier",
         responses={
-            204: "Supplier deleted successfully",
-            404: "Supplier not found"
+            204: OpenApiResponse(description="Supplier deleted successfully"),
+            404: OpenApiResponse(description="Supplier not found")
         }
     )
     def delete(self, request: Request, id):
         supplier = self.get_supplier(id)
         supplier.delete()
-        return Response({'message': 'Supplier deleted successfully'}, status=status.HTTP_204_NO_CONTENT) 
+        return Response({'message': 'Supplier deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

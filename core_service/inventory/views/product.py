@@ -4,8 +4,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from inventory.models.inventory import Inventory
 from inventory.models.store import Store
 from inventory.models.product import Product
@@ -13,8 +12,8 @@ from inventory.serializers.product import ProductSerializer
 
 
 class ProductListView(APIView):
-    @swagger_auto_schema(
-        operation_description="Get a list of all products",
+    @extend_schema(
+        description="Get a list of all products",
         responses={200: ProductSerializer(many=True)}
     )
     def get(self, request: Request):
@@ -22,12 +21,12 @@ class ProductListView(APIView):
         serializer = ProductSerializer(products, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
-    @swagger_auto_schema(
-        operation_description="Create a new product",
-        request_body=ProductSerializer,
+    @extend_schema(
+        description="Create a new product and initialize inventory for stores in the specified company",
+        request=ProductSerializer,
         responses={
             201: ProductSerializer,
-            400: "Invalid data"
+            400: OpenApiResponse(description="Invalid data")
         }
     )
     def post(self, request: Request):
@@ -36,11 +35,11 @@ class ProductListView(APIView):
             product = serializer.save()
             stores = Store.objects.filter(company_id=request.data.get('company_id')) # type: ignore
             for store in stores:
-              Inventory.objects.create(
-                product=product,
-                store=store,
-                quantity=Decimal('0')
-            )
+                Inventory.objects.create(
+                    product=product,
+                    store=store,
+                    quantity=Decimal('0')
+                )
             return Response(data=serializer.data, status=status.HTTP_201_CREATED)
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -53,11 +52,11 @@ class ProductDetailView(APIView):
         except Product.DoesNotExist:
             raise Http404
     
-    @swagger_auto_schema(
-        operation_description="Get a specific product by ID",
+    @extend_schema(
+        description="Get a specific product by ID",
         responses={
             200: ProductSerializer,
-            404: "Product not found"
+            404: OpenApiResponse(description="Product not found")
         }
     )
     def get(self, request: Request, id):
@@ -65,13 +64,13 @@ class ProductDetailView(APIView):
         serializer = ProductSerializer(product)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        operation_description="Update a product",
-        request_body=ProductSerializer,
+    @extend_schema(
+        description="Update a product",
+        request=ProductSerializer,
         responses={
             200: ProductSerializer,
-            400: "Invalid data",
-            404: "Product not found"
+            400: OpenApiResponse(description="Invalid data"),
+            404: OpenApiResponse(description="Product not found")
         }
     )
     def put(self, request: Request, id):
@@ -82,14 +81,14 @@ class ProductDetailView(APIView):
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        operation_description="Delete a product",
+    @extend_schema(
+        description="Delete a product",
         responses={
-            204: "Product deleted successfully",
-            404: "Product not found"
+            204: OpenApiResponse(description="Product deleted successfully"),
+            404: OpenApiResponse(description="Product not found")
         }
     )
     def delete(self, request: Request, id):
         product = self.get_product(id)
         product.delete()
-        return Response({'message': 'Product deleted successfully'}, status=status.HTTP_204_NO_CONTENT) 
+        return Response({'message': 'Product deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

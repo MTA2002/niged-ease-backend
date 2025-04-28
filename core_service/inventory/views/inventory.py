@@ -3,15 +3,14 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from inventory.models.inventory import Inventory
 from inventory.serializers.inventory import InventorySerializer
 
 
 class InventoryListView(APIView):
-    @swagger_auto_schema(
-        operation_description="Get a list of all inventory items",
+    @extend_schema(
+        description="Get a list of all inventory items",
         responses={200: InventorySerializer(many=True)}
     )
     def get(self, request: Request):
@@ -19,20 +18,12 @@ class InventoryListView(APIView):
         serializer = InventorySerializer(inventories, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
-    @swagger_auto_schema(
-        operation_description="Create a new inventory item",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['product_id', 'store_id', 'quantity'],
-            properties={
-                'product_id': openapi.Schema(type=openapi.TYPE_STRING, format='uuid', description='Product ID'),
-                'store_id': openapi.Schema(type=openapi.TYPE_STRING, format='uuid', description='Store ID'),
-                'quantity': openapi.Schema(type=openapi.TYPE_NUMBER, description='Quantity'),
-            },
-        ),
+    @extend_schema(
+        description="Create a new inventory item",
+        request=InventorySerializer,
         responses={
             201: InventorySerializer,
-            400: "Invalid data"
+            400: OpenApiResponse(description="Invalid data")
         }
     )
     def post(self, request: Request):
@@ -51,11 +42,11 @@ class InventoryDetailView(APIView):
         except Inventory.DoesNotExist:
             raise Http404
     
-    @swagger_auto_schema(
-        operation_description="Get a specific inventory item by ID",
+    @extend_schema(
+        description="Get a specific inventory item by ID",
         responses={
             200: InventorySerializer,
-            404: "Inventory item not found"
+            404: OpenApiResponse(description="Inventory item not found")
         }
     )
     def get(self, request: Request, id):
@@ -63,20 +54,13 @@ class InventoryDetailView(APIView):
         serializer = InventorySerializer(inventory)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        operation_description="Update an inventory item",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'product_id': openapi.Schema(type=openapi.TYPE_STRING, format='uuid', description='Product ID'),
-                'store_id': openapi.Schema(type=openapi.TYPE_STRING, format='uuid', description='Store ID'),
-                'quantity': openapi.Schema(type=openapi.TYPE_NUMBER, description='Quantity'),
-            },
-        ),
+    @extend_schema(
+        description="Update an inventory item",
+        request=InventorySerializer,
         responses={
             200: InventorySerializer,
-            400: "Invalid data",
-            404: "Inventory item not found"
+            400: OpenApiResponse(description="Invalid data"),
+            404: OpenApiResponse(description="Inventory item not found")
         }
     )
     def put(self, request: Request, id):
@@ -87,14 +71,14 @@ class InventoryDetailView(APIView):
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        operation_description="Delete an inventory item",
+    @extend_schema(
+        description="Delete an inventory item",
         responses={
-            204: "Inventory item deleted",
-            404: "Inventory item not found"
+            204: OpenApiResponse(description="Inventory item deleted successfully"),
+            404: OpenApiResponse(description="Inventory item not found")
         }
     )
     def delete(self, request: Request, id):
         inventory = self.get_inventory(id)
         inventory.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT) 
+        return Response({'message': 'Inventory item deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

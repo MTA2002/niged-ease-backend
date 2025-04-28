@@ -19,11 +19,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'drf_yasg',
     'companies',
     'transactions',
     'financials',
     'inventory',
+    'clothings',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -68,10 +69,25 @@ DATABASES = {
 }
 
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
+     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # 👈 use JWTAuthentication here!
+    ],
 }
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Core Service API',
+    'DESCRIPTION': 'API documentation for Core Service',
+    'VERSION': 'v1',
+    'SERVE_INCLUDE_SCHEMA': True,
+    'CONTACT': {'email': 'contact@example.com'},
+    'LICENSE': {'name': 'BSD License'},
+    'TOS': 'https://www.google.com/policies/terms/',
+}
+
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'

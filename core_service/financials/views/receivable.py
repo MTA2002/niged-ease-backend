@@ -3,15 +3,14 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from financials.models.receivable import Receivable
 from financials.serializers.receivable import ReceivableSerializer
 
 
 class ReceivableListView(APIView):
-    @swagger_auto_schema(
-        operation_description="Get a list of all receivables",
+    @extend_schema(
+        description="Get a list of all receivables",
         responses={200: ReceivableSerializer(many=True)}
     )
     def get(self, request: Request):
@@ -19,12 +18,12 @@ class ReceivableListView(APIView):
         serializer = ReceivableSerializer(receivables, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
-    @swagger_auto_schema(
-        operation_description="Create a new receivable",
-        request_body=ReceivableSerializer,
+    @extend_schema(
+        description="Create a new receivable",
+        request=ReceivableSerializer,
         responses={
             201: ReceivableSerializer,
-            400: "Invalid data"
+            400: OpenApiResponse(description="Invalid data")
         }
     )
     def post(self, request: Request):
@@ -43,11 +42,11 @@ class ReceivableDetailView(APIView):
         except Receivable.DoesNotExist:
             raise Http404
     
-    @swagger_auto_schema(
-        operation_description="Get a specific receivable by ID",
+    @extend_schema(
+        description="Get a specific receivable by ID",
         responses={
             200: ReceivableSerializer,
-            404: "Receivable not found"
+            404: OpenApiResponse(description="Receivable not found")
         }
     )
     def get(self, request: Request, id):
@@ -55,13 +54,13 @@ class ReceivableDetailView(APIView):
         serializer = ReceivableSerializer(receivable)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        operation_description="Update a receivable",
-        request_body=ReceivableSerializer,
+    @extend_schema(
+        description="Update a receivable",
+        request=ReceivableSerializer,
         responses={
             200: ReceivableSerializer,
-            400: "Invalid data",
-            404: "Receivable not found"
+            400: OpenApiResponse(description="Invalid data"),
+            404: OpenApiResponse(description="Receivable not found")
         }
     )
     def put(self, request: Request, id):
@@ -72,14 +71,14 @@ class ReceivableDetailView(APIView):
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        operation_description="Delete a receivable",
+    @extend_schema(
+        description="Delete a receivable",
         responses={
-            204: "Receivable deleted successfully",
-            404: "Receivable not found"
+            204: OpenApiResponse(description="Receivable deleted successfully"),
+            404: OpenApiResponse(description="Receivable not found")
         }
     )
     def delete(self, request: Request, id):
         receivable = self.get_receivable(id)
         receivable.delete()
-        return Response({'message': 'Receivable deleted successfully'}, status=status.HTTP_204_NO_CONTENT) 
+        return Response({'message': 'Receivable deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

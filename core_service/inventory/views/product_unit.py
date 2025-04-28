@@ -3,15 +3,14 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from inventory.models.product_unit import ProductUnit
 from inventory.serializers.product_unit import ProductUnitSerializer
 
 
 class ProductUnitListView(APIView):
-    @swagger_auto_schema(
-        operation_description="Get a list of all product units",
+    @extend_schema(
+        description="Get a list of all product units",
         responses={200: ProductUnitSerializer(many=True)}
     )
     def get(self, request: Request):
@@ -19,12 +18,12 @@ class ProductUnitListView(APIView):
         serializer = ProductUnitSerializer(units, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
-    @swagger_auto_schema(
-        operation_description="Create a new product unit",
-        request_body=ProductUnitSerializer,
+    @extend_schema(
+        description="Create a new product unit",
+        request=ProductUnitSerializer,
         responses={
             201: ProductUnitSerializer,
-            400: "Invalid data"
+            400: OpenApiResponse(description="Invalid data")
         }
     )
     def post(self, request: Request):
@@ -43,11 +42,11 @@ class ProductUnitDetailView(APIView):
         except ProductUnit.DoesNotExist:
             raise Http404
     
-    @swagger_auto_schema(
-        operation_description="Get a specific product unit by ID",
+    @extend_schema(
+        description="Get a specific product unit by ID",
         responses={
             200: ProductUnitSerializer,
-            404: "Product unit not found"
+            404: OpenApiResponse(description="Product unit not found")
         }
     )
     def get(self, request: Request, id):
@@ -55,13 +54,13 @@ class ProductUnitDetailView(APIView):
         serializer = ProductUnitSerializer(unit)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        operation_description="Update a product unit",
-        request_body=ProductUnitSerializer,
+    @extend_schema(
+        description="Update a product unit",
+        request=ProductUnitSerializer,
         responses={
             200: ProductUnitSerializer,
-            400: "Invalid data",
-            404: "Product unit not found"
+            400: OpenApiResponse(description="Invalid data"),
+            404: OpenApiResponse(description="Product unit not found")
         }
     )
     def put(self, request: Request, id):
@@ -72,14 +71,14 @@ class ProductUnitDetailView(APIView):
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        operation_description="Delete a product unit",
+    @extend_schema(
+        description="Delete a product unit",
         responses={
-            204: "Product unit deleted successfully",
-            404: "Product unit not found"
+            204: OpenApiResponse(description="Product unit deleted successfully"),
+            404: OpenApiResponse(description="Product unit not found")
         }
     )
     def delete(self, request: Request, id):
         unit = self.get_unit(id)
         unit.delete()
-        return Response({'message': 'Product unit deleted successfully'}, status=status.HTTP_204_NO_CONTENT) 
+        return Response({'message': 'Product unit deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

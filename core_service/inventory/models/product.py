@@ -7,6 +7,8 @@ class Product(models.Model):
 
   id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
   company_id = models.ForeignKey('companies.Company', on_delete=models.CASCADE)
+  color_id = models.ForeignKey('clothings.Color', on_delete=models.CASCADE)
+  collection_id = models.ForeignKey('clothings.Collection', on_delete=models.CASCADE)
   name = models.CharField(max_length=30)
   description = models.TextField(null=True)
   image = models.URLField(null=True)
