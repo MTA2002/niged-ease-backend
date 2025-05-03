@@ -14,6 +14,7 @@ class UserManager(BaseUserManager):
 
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('role', 'super_admin')  # Default role for superuser
         extra_fields.setdefault('company_id', uuid.uuid4())  # Default company_id for superuser
 
         if extra_fields.get('is_staff') is not True:
@@ -22,12 +23,19 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class User(AbstractBaseUser):
+    ROLE_CHOICES = [
+    ('super_admin', 'Super Admin'),
+    ('admin', 'Admin'),
+    ('stock_manager', 'Stock Manager'),
+    ('sales', 'Sales')
+  ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     company_id = models.UUIDField(null=False)
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     email = models.EmailField(unique=True)
-    role = models.ForeignKey('users.Role', on_delete=models.SET_NULL, null=True)
+    # role = models.ForeignKey('users.Role', on_delete=models.SET_NULL, null=True)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, null=False)  # Example role field
     phone_number = models.CharField(max_length=15, null=True, blank=True)
     profile_image = models.URLField(max_length=255, default='', blank=True)
     is_active = models.BooleanField(default=True)

@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'financials',
     'inventory',
     'clothings',
+    'core_auth',
     'drf_spectacular',
 ]
 
@@ -71,12 +72,17 @@ DATABASES = {
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'core_auth.authentication.UserServiceAuthentication',  # Path to your class
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',  # Require authentication
     ],
-     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',  # 👈 use JWTAuthentication here!
-    ],
+
+    #  'DEFAULT_AUTHENTICATION_CLASSES': [
+    #     'rest_framework_simplejwt.authentication.JWTAuthentication',  # 👈 use JWTAuthentication here!
+    # ],
 }
 
 SPECTACULAR_SETTINGS = {

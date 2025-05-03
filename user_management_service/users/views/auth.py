@@ -15,6 +15,8 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from drf_spectacular.types import OpenApiTypes
 
+from users.serializers.auth import LoginSerializer, RefreshTokenSerializer, ResendOTPSerializer, VerifyOTPSerializer, VerifyTokenSerializer
+
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -24,14 +26,7 @@ class LoginView(APIView):
         summary="Login with email and password",
         description="Login with email and password to receive OTP",
         tags=['Authentication'],
-        request={
-            'type': 'object',
-            'required': ['email', 'password'],
-            'properties': {
-                'email': {'type': 'string', 'format': 'email', 'description': "User's email address"},
-                'password': {'type': 'string', 'format': 'password', 'description': "User's password", 'minLength': 8}
-            }
-        },
+        request=LoginSerializer,
         responses={
             200: OpenApiResponse(
                 description='OTP sent successfully',
@@ -95,14 +90,7 @@ class VerifyOTPView(APIView):
         summary="Verify OTP",
         description="Verify OTP and get access token",
         tags=['Authentication'],
-        request={
-            'type': 'object',
-            'required': ['email', 'otp'],
-            'properties': {
-                'email': {'type': 'string', 'format': 'email', 'description': "User's email address"},
-                'otp': {'type': 'string', 'description': "6-digit OTP code", 'minLength': 6, 'maxLength': 6, 'pattern': '^[0-9]{6}$'}
-            }
-        },
+        request=VerifyOTPSerializer,
         responses={
             200: OpenApiResponse(
                 description='Token generated successfully',
@@ -163,13 +151,7 @@ class ResendOTPView(APIView):
         summary="Resend OTP",
         description="Resend OTP to email address",
         tags=['Authentication'],
-        request={
-            'type': 'object',
-            'required': ['email'],
-            'properties': {
-                'email': {'type': 'string', 'format': 'email', 'description': "User's email address"}
-            }
-        },
+        request=ResendOTPSerializer,
         responses={
             200: OpenApiResponse(
                 description='OTP sent successfully',
@@ -229,13 +211,7 @@ class RefreshTokenView(APIView):
         summary="Refresh token",
         description="Get new access token using refresh token",
         tags=['Authentication'],
-        request={
-            'type': 'object',
-            'required': ['refresh_token'],
-            'properties': {
-                'refresh_token': {'type': 'string', 'description': "JWT refresh token", 'example': "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."}
-            }
-        },
+        request=RefreshTokenSerializer,
         responses={
             200: OpenApiResponse(
                 description='Token refreshed successfully',
@@ -289,13 +265,7 @@ class VerifyTokenView(APIView):
         summary="Verify token",
         description="Verify if a JWT token is valid and not blacklisted",
         tags=['Authentication'],
-        request={
-            'type': 'object',
-            'required': ['token'],
-            'properties': {
-                'token': {'type': 'string', 'description': "JWT token to verify", 'example': "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."}
-            }
-        },
+        request=VerifyTokenSerializer,
         responses={
             200: OpenApiResponse(
                 description='Token is valid',
@@ -337,7 +307,8 @@ class VerifyTokenView(APIView):
             return Response({
                 'is_valid': True,
                 'user_id': str(user.id),
-                'email': user.email
+                'email': user.email,
+                'role' : user.role,
             }, status=status.HTTP_200_OK)
 
         except (InvalidToken, TokenError, User.DoesNotExist):
