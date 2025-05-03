@@ -139,7 +139,8 @@ class VerifyOTPView(APIView):
 
         return Response({
             'access': access_token,
-            'refresh': str(refresh)
+            'refresh': str(refresh),
+            'role' : user.role
         }, status=status.HTTP_200_OK)
 
 
