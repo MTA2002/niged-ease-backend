@@ -8,6 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', default='-asdf&*YJHKP908yuik')
 DEBUG = os.getenv('DEBUG', default=True)
+print("USER_SERVICE_URL loaded:", os.getenv('USER_SERVICE_URL'))
 
 ALLOWED_HOSTS = ['*']
 
@@ -74,7 +75,8 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'core_auth.authentication.UserServiceAuthentication',  # Path to your class
+        'core_auth.authentication.UserServiceAuthentication',
+          'rest_framework_simplejwt.authentication.JWTAuthentication'  # Path to your class
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',  # Require authentication
@@ -93,6 +95,11 @@ SPECTACULAR_SETTINGS = {
     'CONTACT': {'email': 'contact@example.com'},
     'LICENSE': {'name': 'BSD License'},
     'TOS': 'https://www.google.com/policies/terms/',
+    'SECURITY': [
+        {
+            'BearerAuth': [],  # Reference the name from UserServiceAuthenticationExtension
+        },
+    ],
 }
 
 
