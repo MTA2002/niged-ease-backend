@@ -19,7 +19,11 @@ class SaleSerializer(serializers.ModelSerializer):
     customer_id = serializers.UUIDField(write_only=True)
     currency_id = serializers.UUIDField(write_only=True, required=False)
     payment_mode_id = serializers.UUIDField(write_only=True, required=False)
-    
+    items = serializers.ListField(
+       
+        write_only=True,
+        required=True
+    )
     company = CompanySerializer(read_only=True)
     store = StoreSerializer(read_only=True)
     customer = CustomerSerializer(read_only=True)
@@ -39,7 +43,7 @@ class SaleSerializer(serializers.ModelSerializer):
             'company_id': {'required': True},
             'store_id': {'required': True},
             'customer_id': {'required': True},
-            'total_amount': {'required': True}
+            
         }
 
     def validate(self, attrs):
