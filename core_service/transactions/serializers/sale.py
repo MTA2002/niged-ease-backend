@@ -36,7 +36,8 @@ class SaleSerializer(serializers.ModelSerializer):
             'id', 'company_id', 'company', 'store_id', 'store', 
             'customer_id', 'customer', 'total_amount', 
             'currency_id', 'currency', 'payment_mode_id', 'payment_mode',
-            'is_credit', 'created_at', 'updated_at'
+            'is_credit', 'created_at', 'updated_at',
+            'items'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
         extra_kwargs = {
