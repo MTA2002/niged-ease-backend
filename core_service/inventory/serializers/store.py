@@ -12,13 +12,14 @@ class StoreSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'company_id', 'company', 'name', 
             'location', 'created_at', 
-            'updated_at'
+            'updated_at', 'is_active'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
         extra_kwargs = {
             'company_id': {'required': True},
             'name': {'required': True},
-            'location': {'required': True}
+            'location': {'required': True},
+            'is_active': {'required': False}
         }
 
     def create(self, validated_data):
