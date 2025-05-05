@@ -22,7 +22,9 @@ class SaleSerializer(serializers.ModelSerializer):
     items = serializers.ListField(
        
         write_only=True,
-        required=True
+        child=serializers.DictField(
+            child=serializers.CharField()
+        ),
     )
     company = CompanySerializer(read_only=True)
     store = StoreSerializer(read_only=True)
