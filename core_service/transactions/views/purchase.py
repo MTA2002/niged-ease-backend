@@ -29,6 +29,8 @@ class PurchaseListView(APIView):
             400: OpenApiResponse(description="Invalid data")
         }
     )
+
+    
     def post(self, request: Request):
         purchase_items_data = request.data.pop('items', []) # type: ignore
         purchase_serializer = PurchaseSerializer(data=request.data)

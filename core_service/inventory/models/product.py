@@ -13,6 +13,8 @@ class Product(models.Model):
   description = models.TextField(null=True)
   image = models.URLField(null=True)
   product_unit = models.ForeignKey('inventory.ProductUnit', on_delete=models.PROTECT)
+  purchase_price = models.DecimalField(max_digits=19, decimal_places=4)
+  sale_price = models.DecimalField(max_digits=19, decimal_places=4)
   product_category = models.ForeignKey('inventory.ProductCategory', on_delete=models.PROTECT)
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
