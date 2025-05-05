@@ -21,6 +21,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'description', 'image',
             'product_unit', 'product_category',
             'product_unit_id', 'product_category_id',
+            'purchase_price','sale_price',
             'color_id', 'collection_id',
             'created_at', 'updated_at'
         ]
@@ -31,7 +32,9 @@ class ProductSerializer(serializers.ModelSerializer):
             'collection_id': {'required': True},
             'name': {'required': True},
             'product_unit': {'required': True},
-            'product_category': {'required': True}
+            'product_category': {'required': True},
+            'purchase_price': {'required': True},
+            'sale_price': {'required': True}
         }
 
     def create(self, validated_data):
