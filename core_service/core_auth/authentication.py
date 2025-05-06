@@ -14,8 +14,9 @@ class UserServiceAuthentication(authentication.BaseAuthentication):
           # Debugging line
         token = auth_header.split(' ')[1]
         print(f"Token received: {token}")  # Debugging line
-        user_service_url = os.getenv('USER_SERVICE_URL', 'http://127.0.0.1:8000') + '/auth/verify-token/'
+        user_service_url = os.getenv('USER_SERVICE_URL', 'http://127.0.0.1:8001') + '/auth/verify-token/'
         # Call User Service's verify token endpoint
+        print(f"User Service URL: {os.getenv('USER_SERVICE_URL')}")
         print(f"User Service URL: {user_service_url}")
         headers = {'Authorization': f'Bearer {token}'}
         try:

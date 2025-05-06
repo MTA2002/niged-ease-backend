@@ -19,7 +19,13 @@ class PurchaseSerializer(serializers.ModelSerializer):
     supplier_id = serializers.UUIDField(write_only=True)
     currency_id = serializers.UUIDField(write_only=True, required=False)
     payment_mode_id = serializers.UUIDField(write_only=True, required=False)
-    
+    items = serializers.ListField(
+       
+        write_only=True,
+        child=serializers.DictField(
+            child=serializers.CharField()
+        ),
+    )
     company = CompanySerializer(read_only=True)
     store = StoreSerializer(read_only=True)
     supplier = SupplierSerializer(read_only=True)
@@ -32,9 +38,10 @@ class PurchaseSerializer(serializers.ModelSerializer):
             'id', 'company_id', 'company', 'store_id', 'store', 
             'supplier_id', 'supplier', 'total_amount', 
             'currency_id', 'currency', 'payment_mode_id', 'payment_mode',
-            'is_credit', 'created_at', 'updated_at'
+            'is_credit', 'created_at', 'updated_at','items'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+        write_only_fields = ['items']
         extra_kwargs = {
             'company_id': {'required': True},
             'store_id': {'required': True},
@@ -78,7 +85,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
         
         for item in attrs.get('items', []):
             product_id = item.get('product_id')
-            quantity = item.get('quantity')
+            quantity = int(item.get('quantity'))
             if product_id is None:
                 raise serializers.ValidationError("Product cannot be null.")
             if quantity is None:
@@ -88,16 +95,17 @@ class PurchaseSerializer(serializers.ModelSerializer):
             if not isinstance(product_id, str):
                 raise serializers.ValidationError("Product ID must be a string.")
             
-            product = Product.objects.filter(id=product).first()
+            product = Product.objects.filter(id=product_id).first()
 
             if product and quantity:
                 actual_amount += product.purchase_price * quantity
-        
+        print("Actual Amount:", actual_amount)
         if actual_amount != given_amount:
             raise serializers.ValidationError("Total amount does not match the sum of item prices.")
         
         return attrs
     def create(self, validated_data):
+        items_data = validated_data.pop('items')
         company_id = validated_data.pop('company_id')
         store_id = validated_data.pop('store_id')
         supplier_id = validated_data.pop('supplier_id')
@@ -116,6 +124,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
                 **validated_data
             )
             
+            print("Purchase Created:", purchase)
             if currency_id:
                 currency = Currency.objects.get(id=currency_id)
                 purchase.currency = currency # type: ignore
@@ -124,9 +133,46 @@ class PurchaseSerializer(serializers.ModelSerializer):
                 payment_mode = PaymentMode.objects.get(id=payment_mode_id)
                 purchase.payment_mode = payment_mode # type: ignore
                 
+            
+
+            from transactions.models.purchase_item import PurchaseItem
+            from inventory.models.product import Product
+            
+            for item_data in items_data:
+                PurchaseItem.objects.create(
+                    purchase=purchase,
+                    product=Product.objects.get(id=item_data['product_id']),
+                    quantity=item_data['quantity']
+                )
+            
             purchase.save()
+            
+        
             return purchase
             
         except (Company.DoesNotExist, Store.DoesNotExist, Supplier.DoesNotExist,
                 Currency.DoesNotExist, PaymentMode.DoesNotExist) as e:
-            raise serializers.ValidationError(str(e)) 
+            raise serializers.ValidationError(str(e))
+
+    def update(self, instance, validated_data):
+        """Update a Purchase instance and its associated PurchaseItems."""
+        # Extract items and related IDs from validated data
+        items_data = validated_data.pop('items', [])
+        
+        # Update the Purchase instance
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Create new PurchaseItem instances from items data
+        from transactions.models.purchase_item import PurchaseItem
+        from inventory.models.product import Product
+        
+        for item_data in items_data:
+            PurchaseItem.objects.create(
+                purchase=instance,
+                product=Product.objects.get(id=item_data['product_id']),
+                quantity=item_data['quantity']
+            )
+        
+        return instance 

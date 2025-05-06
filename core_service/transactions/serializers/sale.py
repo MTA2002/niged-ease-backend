@@ -1,3 +1,4 @@
+# type: ignore
 from rest_framework import serializers
 from inventory.models.product import Product
 from transactions.models import Sale
@@ -77,21 +78,25 @@ class SaleSerializer(serializers.ModelSerializer):
         
         for item in attrs.get('items', []):
             product_id = item.get('product_id')
-            quantity = item.get('quantity')
+            quantity = int(item.get('quantity', 0))
+            print("Product ID:", product_id)
+            print("Quantity:", quantity)
             if product_id is None:
                 raise serializers.ValidationError("Product cannot be null.")
             if quantity is None:
                 raise serializers.ValidationError("Quantity cannot be null.")
+            print(not isinstance(quantity, int), quantity)
             if not isinstance(quantity, int) or quantity <= 0:
                 raise serializers.ValidationError("Quantity must be a positive integer.")
             if not isinstance(product_id, str):
                 raise serializers.ValidationError("Product ID must be a string.")
             
-            product = Product.objects.filter(id=product).first()
+            product = Product.objects.filter(id=product_id).first()
 
             if product and quantity:
                 actual_amount += product.sale_price * quantity
         
+        print("Actual Amount:", actual_amount)
         if actual_amount != given_amount:
             raise serializers.ValidationError("Total amount does not match the sum of item prices.")
         
@@ -105,6 +110,8 @@ class SaleSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
     
     def create(self, validated_data):
+        # Extract items and related IDs from validated data
+        items_data = validated_data.pop('items')
         company_id = validated_data.pop('company_id')
         store_id = validated_data.pop('store_id')
         customer_id = validated_data.pop('customer_id')
@@ -112,10 +119,12 @@ class SaleSerializer(serializers.ModelSerializer):
         payment_mode_id = validated_data.pop('payment_mode_id', None)
         
         try:
+            # Fetch related objects
             company = Company.objects.get(id=company_id)
             store = Store.objects.get(id=store_id)
             customer = Customer.objects.get(id=customer_id)
             
+            # Create the Sale instance
             sale = Sale.objects.create(
                 company=company,
                 store=store,
@@ -123,17 +132,28 @@ class SaleSerializer(serializers.ModelSerializer):
                 **validated_data
             )
             
+            # Set optional related fields
             if currency_id:
                 currency = Currency.objects.get(id=currency_id)
-                sale.currency = currency # type: ignore
-                
+                sale.currency = currency
             if payment_mode_id:
                 payment_mode = PaymentMode.objects.get(id=payment_mode_id)
-                sale.payment_mode = payment_mode # type: ignore
-                
+                sale.payment_mode = payment_mode
+            
+            # Create SaleItem instances from items data
+            from transactions.models.sale_item import SaleItem
+            from inventory.models.product import Product
+            
+            for item_data in items_data:
+                SaleItem.objects.create(
+                    sale=sale,
+                    product=Product.objects.get(id=item_data['product_id']),
+                    quantity=item_data['quantity']
+                )
+            
             sale.save()
             return sale
             
         except (Company.DoesNotExist, Store.DoesNotExist, Customer.DoesNotExist,
-                Currency.DoesNotExist, PaymentMode.DoesNotExist) as e:
+                Currency.DoesNotExist, PaymentMode.DoesNotExist, Product.DoesNotExist) as e:
             raise serializers.ValidationError(str(e)) 

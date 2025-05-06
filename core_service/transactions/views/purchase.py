@@ -9,6 +9,7 @@ from transactions.models.purchase import Purchase
 from transactions.models.purchase_item import PurchaseItem
 from transactions.serializers.purchase import PurchaseSerializer
 from transactions.serializers.purchase_item import PurchaseItemSerializer
+from rest_framework import serializers
 
 
 class PurchaseListView(APIView):
@@ -29,33 +30,28 @@ class PurchaseListView(APIView):
             400: OpenApiResponse(description="Invalid data")
         }
     )
-
-    
     def post(self, request: Request):
-        purchase_items_data = request.data.pop('items', []) # type: ignore
         purchase_serializer = PurchaseSerializer(data=request.data)
         
         if purchase_serializer.is_valid():
-            purchase = purchase_serializer.save()
-            
-            purchase_items = []
-            for item_data in purchase_items_data:
-                item_data['purchase'] = purchase.id # type: ignore
-                item_serializer = PurchaseItemSerializer(data=item_data)
-                if item_serializer.is_valid():
-                    purchase_item = item_serializer.save()
-                    purchase_items.append(purchase_item)
-                else:
-                    purchase.delete()
-                    return Response(item_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
             try:
-                purchase.update_inventory(purchase_items)
-            except ValueError as e:
-                purchase.delete()
+                # Save purchase and let serializer create the items
+                purchase = purchase_serializer.save()
+                
+                # The serializer's create method already created the items
+                # Just need to get them for inventory update
+                purchase_items = PurchaseItem.objects.filter(purchase=purchase)
+                
+                # Update inventory
+                try:
+                    purchase.update_inventory(purchase_items)
+                except ValueError as e:
+                    purchase.delete()
+                    return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                
+                return Response(purchase_serializer.data, status=status.HTTP_201_CREATED)
+            except serializers.ValidationError as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            
-            return Response(purchase_serializer.data, status=status.HTTP_201_CREATED)
         return Response(purchase_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -90,30 +86,33 @@ class PurchaseDetailView(APIView):
     )
     def put(self, request: Request, id):
         purchase = self.get_purchase(id)
-        purchase_items_data = request.data.pop('items', []) # type: ignore
+        
+        # Store the items data but don't remove it from request
+        items_data = request.data.get('items', [])
+        
+        # First, delete existing items
+        PurchaseItem.objects.filter(purchase=purchase).delete()
+        
+        # Now update the purchase with all data including items
         purchase_serializer = PurchaseSerializer(purchase, data=request.data)
         
         if purchase_serializer.is_valid():
-            purchase = purchase_serializer.save()
-            PurchaseItem.objects.filter(purchase=purchase).delete()
-            
-            purchase_items = []
-            for item_data in purchase_items_data:
-                item_data['purchase'] = purchase.id # type: ignore
-                item_serializer = PurchaseItemSerializer(data=item_data)
-                if item_serializer.is_valid():
-                    purchase_item = item_serializer.save()
-                    purchase_items.append(purchase_item)
-                else:
-                    return Response(item_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
             try:
-                purchase.update_inventory(purchase_items)
-            except ValueError as e:
-                purchase.delete()
+                purchase = purchase_serializer.save()
+                
+                # Get the newly created items
+                purchase_items = PurchaseItem.objects.filter(purchase=purchase)
+                
+                # Update inventory
+                try:
+                    purchase.update_inventory(purchase_items)
+                except ValueError as e:
+                    # Restore original state (challenging to do perfectly)
+                    return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                
+                return Response(purchase_serializer.data, status=status.HTTP_200_OK)
+            except serializers.ValidationError as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            
-            return Response(purchase_serializer.data, status=status.HTTP_200_OK)
         return Response(purchase_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
