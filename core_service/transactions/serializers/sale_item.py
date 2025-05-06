@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from transactions.models.sale_item import SaleItem
-from transactions.serializers.sale import SaleSerializer
 from inventory.serializers.product import ProductSerializer
 from transactions.models.sale import Sale
 from inventory.models.product import Product

@@ -31,12 +31,13 @@ class SaleListView(APIView):
         }
     )
     def post(self, request: Request):
-        sale_items_data = request.data.pop('items', []) 
+        
         sale_serializer = SaleSerializer(data=request.data)
+        
         
         if sale_serializer.is_valid():
             sale = sale_serializer.save()
-            
+            sale_items_data = request.data.pop('items', []) 
             sale_items = []
             for item_data in sale_items_data:
                 item_data['sale'] = sale.id
