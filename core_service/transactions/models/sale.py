@@ -4,6 +4,10 @@ from decimal import Decimal
 from inventory.models.inventory import Inventory
 
 class Sale(models.Model):
+  class SaleStatus(models.TextChoices):
+    UNPAID = 'UNPAID', 'Unpaid'
+    PARTIALLY_PAID = 'PARTIALLY_PAID', 'Partially Paid'
+    PAID = 'PAID', 'Paid'
 
   id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
   company = models.ForeignKey('companies.Company', on_delete=models.CASCADE)
@@ -13,6 +17,11 @@ class Sale(models.Model):
   currency = models.ForeignKey('companies.Currency', on_delete=models.SET_NULL, null=True)
   payment_mode = models.ForeignKey('transactions.PaymentMode', on_delete=models.SET_NULL, null=True)
   is_credit = models.BooleanField(default=False)
+  status = models.CharField(
+    max_length=20,
+    choices=SaleStatus.choices,
+    default=SaleStatus.UNPAID
+  )
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
 
