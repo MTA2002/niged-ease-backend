@@ -40,7 +40,7 @@ class UserServiceAuthentication(authentication.BaseAuthentication):
                 'first_name': 'first_name',
                 'last_name': 'last_name',
                 'role': 'role',
-                'company_id': 'company_id',
+                'company_id': data.get('company_id'),
                 'is_active': 'is_active'
             }
         )

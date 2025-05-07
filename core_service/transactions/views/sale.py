@@ -72,28 +72,11 @@ class SaleDetailView(APIView):
     )
     def put(self, request: Request, id):
         sale = self.get_sale(id)
-        sale_items_data = request.data.pop('items', [])
+        
         sale_serializer = SaleSerializer(sale, data=request.data)
         
         if sale_serializer.is_valid():
-            sale = sale_serializer.save()
-            SaleItem.objects.filter(sale=sale).delete()
-            
-            sale_items = []
-            for item_data in sale_items_data:
-                item_data['sale'] = sale.id
-                item_serializer = SaleItemSerializer(data=item_data)
-                if item_serializer.is_valid():
-                    sale_item = item_serializer.save()
-                    sale_items.append(sale_item)
-                else:
-                    return Response(item_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
-            try:
-                sale.update_inventory(sale_items)
-            except ValueError as e:
-                sale.delete()
-                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            sale_serializer.save()
             
             return Response(sale_serializer.data, status=status.HTTP_200_OK)
         return Response(sale_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -166,6 +149,7 @@ class SaleItemDetailView(APIView):
     def get(self, request: Request, sale_id, item_id):
         item = self.get_item(sale_id, item_id)
         serializer = SaleItemSerializer(item)
+        
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
