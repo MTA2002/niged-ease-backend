@@ -9,6 +9,7 @@ from companies.serializers.currency import CurrencySerializer
 from transactions.serializers.payment_mode import PaymentModeSerializer
 from companies.models.company import Company
 from inventory.models.store import Store
+from inventory.models.inventory import Inventory
 from transactions.models.customer import Customer
 from companies.models.currency import Currency
 from transactions.models.payment_mode import PaymentMode
@@ -80,7 +81,11 @@ class SaleSerializer(serializers.ModelSerializer):
         
         for item in attrs.get('items', []):
             product_id = item.get('product_id')
-            quantity = int(item.get('quantity', 0))
+            try:
+                quantity = int(item.get('quantity', 0))
+            except (ValueError, TypeError):
+                raise serializers.ValidationError("Quantity must be a valid integer.")
+                
             print("Product ID:", product_id)
             print("Quantity:", quantity)
             if product_id is None:
@@ -88,7 +93,7 @@ class SaleSerializer(serializers.ModelSerializer):
             if quantity is None:
                 raise serializers.ValidationError("Quantity cannot be null.")
             print(not isinstance(quantity, int), quantity)
-            if not isinstance(quantity, int) or quantity <= 0:
+            if quantity <= 0:
                 raise serializers.ValidationError("Quantity must be a positive integer.")
             if not isinstance(product_id, str):
                 raise serializers.ValidationError("Product ID must be a string.")
@@ -169,13 +174,22 @@ class SaleSerializer(serializers.ModelSerializer):
                 payment_mode = PaymentMode.objects.get(id=payment_mode_id)
                 sale.payment_mode = payment_mode
             
-            # Create SaleItem instances from items data
+            # Create SaleItem instances and update inventory
             for item_data in items_data:
+                product = Product.objects.get(id=item_data['product_id'])
+                quantity = int(item_data['quantity'])
+                
+                # Create sale item
                 SaleItem.objects.create(
                     sale=sale,
-                    product=Product.objects.get(id=item_data['product_id']),
-                    quantity=item_data['quantity']
+                    product=product,
+                    quantity=quantity
                 )
+                
+                # Update inventory
+                inventory = Inventory.objects.get(product=product, store=store)
+                inventory.quantity -= quantity
+                inventory.save()
             
             # Create receivable if not fully paid
             if status in [Sale.SaleStatus.UNPAID, Sale.SaleStatus.PARTIALLY_PAID]:
@@ -191,7 +205,8 @@ class SaleSerializer(serializers.ModelSerializer):
             return sale
             
         except (Company.DoesNotExist, Store.DoesNotExist, Customer.DoesNotExist,
-                Currency.DoesNotExist, PaymentMode.DoesNotExist, Product.DoesNotExist) as e:
+                Currency.DoesNotExist, PaymentMode.DoesNotExist, Product.DoesNotExist,
+                Inventory.DoesNotExist) as e:
             raise serializers.ValidationError(str(e))
 
     def update(self, instance, validated_data):
@@ -226,16 +241,36 @@ class SaleSerializer(serializers.ModelSerializer):
 
         # Handle items update if provided
         if items_data:
-            # First, delete existing items
-            instance.saleitem_set.all().delete()
+            # First, restore inventory quantities from old items
+            old_items = SaleItem.objects.filter(sale=instance)
+            for old_item in old_items:
+                inventory = Inventory.objects.get(product=old_item.product, store=instance.store)
+                inventory.quantity += old_item.quantity
+                inventory.save()
             
-            # Create new items
+            # Delete old items
+            old_items.delete()
+            
+            # Create new items and update inventory
             for item_data in items_data:
+                product = Product.objects.get(id=item_data['product_id'])
+                quantity = int(item_data['quantity'])
+                
+                # Validate inventory
+                inventory = Inventory.objects.get(product=product, store=instance.store)
+                if inventory.quantity < quantity:
+                    raise serializers.ValidationError(f"Insufficient inventory for product {product.name}")
+                
+                # Create new sale item
                 SaleItem.objects.create(
                     sale=instance,
-                    product=Product.objects.get(id=item_data['product_id']),
-                    quantity=item_data['quantity']
+                    product=product,
+                    quantity=quantity
                 )
+                
+                # Update inventory
+                inventory.quantity -= quantity
+                inventory.save()
 
         # Handle receivable update
         try:

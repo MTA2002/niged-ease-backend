@@ -87,17 +87,10 @@ class PurchaseDetailView(APIView):
         
         if purchase_serializer.is_valid():
             try:
-                purchase = purchase_serializer.save()
+                purchase_serializer.save()
                 
                 # Get the newly created items
-                purchase_items = PurchaseItem.objects.filter(purchase=purchase)
                 
-                # Update inventory
-                try:
-                    purchase.update_inventory(purchase_items)
-                except ValueError as e:
-                    # Restore original state (challenging to do perfectly)
-                    return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
                 
                 return Response(purchase_serializer.data, status=status.HTTP_200_OK)
             except serializers.ValidationError as e:
@@ -187,33 +180,16 @@ class PurchaseItemDetailView(APIView):
         try:
             purchase = Purchase.objects.get(id=purchase_id)
             item = self.get_item(purchase_id, item_id)
-            old_quantity = item.quantity
             
             request.data['purchase'] = purchase_id # type: ignore
             serializer = PurchaseItemSerializer(item, data=request.data)
             if serializer.is_valid():
-                try:
-                    inventory = Inventory.objects.get(
-                        product=item.product,
-                        store=purchase.store
-                    )
-                    inventory.quantity -= old_quantity
-                    inventory.save()
-                except Inventory.DoesNotExist:
-                    return Response(
-                        {'error': f'No inventory record found for product {item.product.name} in store {purchase.store.name}'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
                 
-                updated_item = serializer.save()
                 
-                try:
-                    purchase.update_inventory([updated_item])
-                    return Response(data=serializer.data, status=status.HTTP_200_OK)
-                except ValueError as e:
-                    inventory.quantity += updated_item.quantity
-                    inventory.save()
-                    return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                serializer.save()
+                return Response(data=serializer.data, status=status.HTTP_200_OK)
+                
+
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Purchase.DoesNotExist:
             return Response({'error': 'Purchase not found'}, status=status.HTTP_404_NOT_FOUND)

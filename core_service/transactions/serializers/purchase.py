@@ -1,5 +1,6 @@
 # type: ignore
 from rest_framework import serializers
+from django.db import models
 from inventory.models.product import Product
 from transactions.models import Purchase
 from companies.serializers.company import CompanySerializer
@@ -14,6 +15,7 @@ from companies.models.currency import Currency
 from transactions.models.payment_mode import PaymentMode
 from transactions.models.purchase_item import PurchaseItem
 from financials.models.payable import Payable
+from inventory.models.inventory import Inventory
 
 class PurchaseSerializer(serializers.ModelSerializer):
     company_id = serializers.UUIDField(write_only=True)
@@ -53,56 +55,51 @@ class PurchaseSerializer(serializers.ModelSerializer):
             'total_amount': {'required': True}
         }
     
-    def validate(self, attrs):
+    def validate(self, data):
         """
-        Validate the input data for creating a Purchase.
-        Ensure that the company, store, and supplier exist.
+        Validate that the payable and purchase belong to the same company
+        and the payment amount is valid.
         """
-        company_id = attrs.get('company_id')
-        store_id = attrs.get('store_id')
-        supplier_id = attrs.get('supplier_id')
-        
-        try:
-            Company.objects.get(id=company_id)
-            Store.objects.get(id=store_id)
-            Supplier.objects.get(id=supplier_id)
-        except (Company.DoesNotExist, Store.DoesNotExist, Supplier.DoesNotExist) as e:
-            raise serializers.ValidationError(str(e))
-
-        given_amount = attrs.get('total_amount')
+        company_id = data.get('company_id')
+        store_id = data.get('store_id')
+        supplier_id = data.get('supplier_id')
+        given_amount = data.get('total_amount')
         actual_amount = 0
 
         # Validate that the total amount is a positive number
         if given_amount < 0:
             raise serializers.ValidationError("Total amount must be a positive number.")
         
-        if 'items' not in attrs:
-            raise serializers.ValidationError("Items are required to create a purhase.")
+        if 'items' not in data:
+            raise serializers.ValidationError("Items are required to create a purchase.")
         
-        if attrs['items'] is None:
+        if data['items'] is None:
             raise serializers.ValidationError("Items cannot be null.")
-        if not isinstance(attrs['items'], list):
+        if not isinstance(data['items'], list):
             raise serializers.ValidationError("Items must be a list.")
-        if len(attrs['items']) == 0:
+        if len(data['items']) == 0:
             raise serializers.ValidationError("Items cannot be an empty list.")
         
-        
-        for item in attrs.get('items', []):
+        for item in data.get('items', []):
             product_id = item.get('product_id')
-            quantity = int(item.get('quantity'))
+            try:
+                quantity = int(item.get('quantity', 0))
+            except (ValueError, TypeError):
+                raise serializers.ValidationError("Quantity must be a valid integer.")
+                
             if product_id is None:
                 raise serializers.ValidationError("Product cannot be null.")
             if quantity is None:
                 raise serializers.ValidationError("Quantity cannot be null.")
-            if not isinstance(quantity, int) or quantity <= 0:
+            if quantity <= 0:
                 raise serializers.ValidationError("Quantity must be a positive integer.")
             if not isinstance(product_id, str):
                 raise serializers.ValidationError("Product ID must be a string.")
             
             product = Product.objects.filter(id=product_id).first()
-
             if product and quantity:
                 actual_amount += product.purchase_price * quantity
+        
         print("Actual Amount:", actual_amount)
         print("Given Amount:", given_amount)
         if given_amount > actual_amount:
@@ -111,7 +108,8 @@ class PurchaseSerializer(serializers.ModelSerializer):
         if given_amount < 0:
             raise serializers.ValidationError("Given amount cannot be negative.")
         
-        return attrs
+        return data
+
     def create(self, validated_data):
         items_data = validated_data.pop('items')
         company_id = validated_data.pop('company_id')
@@ -161,12 +159,29 @@ class PurchaseSerializer(serializers.ModelSerializer):
                 payment_mode = PaymentMode.objects.get(id=payment_mode_id)
                 purchase.payment_mode = payment_mode
             
+            # Create PurchaseItem instances and update inventory
             for item_data in items_data:
+                product = Product.objects.get(id=item_data['product_id'])
+                quantity = int(item_data['quantity'])
+                
+                # Create purchase item
                 PurchaseItem.objects.create(
                     purchase=purchase,
-                    product=Product.objects.get(id=item_data['product_id']),
-                    quantity=item_data['quantity']
+                    product=product,
+                    quantity=quantity
                 )
+                
+                # Update or create inventory
+                try:
+                    inventory = Inventory.objects.get(product=product, store=store)
+                    inventory.quantity += quantity
+                    inventory.save()
+                except Inventory.DoesNotExist:
+                    Inventory.objects.create(
+                        product=product,
+                        store=store,
+                        quantity=quantity
+                    )
             
             # Create payable if not fully paid
             if status in [Purchase.PurchaseStatus.UNPAID, Purchase.PurchaseStatus.PARTIALLY_PAID]:
@@ -182,7 +197,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
             return purchase
             
         except (Company.DoesNotExist, Store.DoesNotExist, Supplier.DoesNotExist,
-                Currency.DoesNotExist, PaymentMode.DoesNotExist) as e:
+                Currency.DoesNotExist, PaymentMode.DoesNotExist, Product.DoesNotExist) as e:
             raise serializers.ValidationError(str(e))
 
     def update(self, instance, validated_data):
@@ -217,16 +232,39 @@ class PurchaseSerializer(serializers.ModelSerializer):
 
         # Handle items update if provided
         if items_data:
-            # First, delete existing items
-            instance.purchaseitem_set.all().delete()
+            # First, reverse inventory quantities from old items
+            old_items = PurchaseItem.objects.filter(purchase=instance)
+            for old_item in old_items:
+                inventory = Inventory.objects.get(product=old_item.product, store=instance.store)
+                inventory.quantity -= old_item.quantity
+                inventory.save()
             
-            # Create new items
+            # Delete old items
+            old_items.delete()
+            
+            # Create new items and update inventory
             for item_data in items_data:
+                product = Product.objects.get(id=item_data['product_id'])
+                quantity = item_data['quantity']
+                
+                # Create new purchase item
                 PurchaseItem.objects.create(
                     purchase=instance,
-                    product=Product.objects.get(id=item_data['product_id']),
-                    quantity=item_data['quantity']
+                    product=product,
+                    quantity=quantity
                 )
+                
+                # Update or create inventory
+                try:
+                    inventory = Inventory.objects.get(product=product, store=instance.store)
+                    inventory.quantity += quantity
+                    inventory.save()
+                except Inventory.DoesNotExist:
+                    Inventory.objects.create(
+                        product=product,
+                        store=instance.store,
+                        quantity=quantity
+                    )
 
         # Handle payable update
         try:
