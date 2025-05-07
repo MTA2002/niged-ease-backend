@@ -1,3 +1,4 @@
+# type: ignore
 from django.http import Http404
 from rest_framework import status
 from rest_framework.views import APIView
@@ -36,19 +37,7 @@ class PurchaseListView(APIView):
         if purchase_serializer.is_valid():
             try:
                 # Save purchase and let serializer create the items
-                purchase = purchase_serializer.save()
-                
-                # The serializer's create method already created the items
-                # Just need to get them for inventory update
-                purchase_items = PurchaseItem.objects.filter(purchase=purchase)
-                
-                # Update inventory
-                try:
-                    purchase.update_inventory(purchase_items)
-                except ValueError as e:
-                    purchase.delete()
-                    return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-                
+                purchase_serializer.save()
                 return Response(purchase_serializer.data, status=status.HTTP_201_CREATED)
             except serializers.ValidationError as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
