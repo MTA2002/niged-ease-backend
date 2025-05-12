@@ -1,10 +1,6 @@
 from rest_framework import serializers
-from .models import Subscription, SubscriptionPlan
-
-class SubscriptionPlanSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SubscriptionPlan
-        fields = ['id', 'name', 'description', 'price', 'features']
+from companies.models import Subscription
+from .subscription_plan import SubscriptionPlanSerializer
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     plan = SubscriptionPlanSerializer(read_only=True)
