@@ -11,6 +11,7 @@ from companies.views.currency import (
     CurrencyListView,
     CurrencyDetailView
 )
+from .views import subscription_views
 
 urlpatterns = [
     # Company URLs
@@ -24,4 +25,7 @@ urlpatterns = [
     # Currency URLs
     path('currencies/', CurrencyListView.as_view(), name='currency-list'),
     path('currencies/<uuid:id>/', CurrencyDetailView.as_view(), name='currency-detail'),
+
+    path('api/is_subscribed/', subscription_views.check_subscription, name='check_subscription'),
+    path('api/subscription/renew/', subscription_views.renew_subscription, name='renew_subscription'),
 ] 
