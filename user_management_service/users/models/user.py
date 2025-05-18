@@ -42,6 +42,7 @@ class User(AbstractBaseUser):
     is_staff = models.BooleanField(default=False)  # Required for admin access
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    assigned_store = models.CharField(max_length=50, null=True, blank=True)
 
     objects = UserManager()
 

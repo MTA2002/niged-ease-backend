@@ -1,11 +1,14 @@
+from companies.models.store import Store
 from rest_framework import serializers
 from clothings.models.color import Color
 
 class ColorSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Color
         fields = [
             'id',
+            'store_id',
             'name',
             'color_code',
             'created_at',
@@ -15,6 +18,7 @@ class ColorSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
         extra_kwargs = {
+            'store_id': {'required': True},
             'name': {'required': True},
             'color_code': {'required': True}
         }
@@ -29,3 +33,7 @@ class ColorSerializer(serializers.ModelSerializer):
                 "Color code must be in the format '#RRGGBB'."
             )
         return data
+
+    def create(self, validated_data):
+
+        return super().create(validated_data)

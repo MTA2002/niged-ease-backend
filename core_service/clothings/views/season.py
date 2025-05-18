@@ -13,8 +13,8 @@ class SeasonListView(APIView):
         description="Get a list of all seasons",
         responses={200: SeasonSerializer(many=True)}
     )
-    def get(self, request: Request):
-        seasons = Season.objects.all()
+    def get(self, request: Request, store_id):
+        seasons = Season.objects.filter(store_id=store_id)
         serializer = SeasonSerializer(seasons, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
@@ -26,7 +26,7 @@ class SeasonListView(APIView):
             400: OpenApiResponse(description="Invalid data")
         }
     )
-    def post(self, request: Request):
+    def post(self, request: Request, store_id):
         serializer = SeasonSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -35,9 +35,9 @@ class SeasonListView(APIView):
 
 
 class SeasonDetailView(APIView):
-    def get_season(self, id):
+    def get_season(self, id, store_id):
         try:
-            season = Season.objects.get(pk=id)
+            season = Season.objects.get(pk=id, store_id=store_id)
             return season
         except Season.DoesNotExist:
             raise Http404
@@ -49,8 +49,8 @@ class SeasonDetailView(APIView):
             404: OpenApiResponse(description="Season not found")
         }
     )
-    def get(self, request: Request, id):
-        season = self.get_season(id)
+    def get(self, request: Request, id, store_id):
+        season = self.get_season(id, store_id)
         serializer = SeasonSerializer(season)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -63,8 +63,8 @@ class SeasonDetailView(APIView):
             404: OpenApiResponse(description="Season not found")
         }
     )
-    def put(self, request: Request, id):
-        season = self.get_season(id)
+    def put(self, request: Request, id, store_id):
+        season = self.get_season(id, store_id)
         serializer = SeasonSerializer(season, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -78,7 +78,7 @@ class SeasonDetailView(APIView):
             404: OpenApiResponse(description="Season not found")
         }
     )
-    def delete(self, request: Request, id):
-        season = self.get_season(id)
+    def delete(self, request: Request, id, store_id):
+        season = self.get_season(id, store_id)
         season.delete()
         return Response({'message': 'Season deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

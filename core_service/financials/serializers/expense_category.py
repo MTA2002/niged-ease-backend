@@ -7,7 +7,7 @@ class ExpenseCategorySerializer(serializers.ModelSerializer):
         model = ExpenseCategory
         fields = [
             'id',
-            'company',
+            'store_id',
             'name',
             'description',
             'created_at',
@@ -15,18 +15,18 @@ class ExpenseCategorySerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
         extra_kwargs = {
-            'company': {'required': True},
+            'store_id': {'required': True},
             'name': {'required': True}
         }
 
     def validate_name(self, value):
         """
-        Validate that the category name is unique within the company.
+        Validate that the category name is unique within the store.
         """
-        company = self.initial_data.get('company') # type: ignore
-        if company:
-            if ExpenseCategory.objects.filter(company=company, name=value).exists():
+        store_id = self.initial_data.get('store_id') # type: ignore
+        if store_id:
+            if ExpenseCategory.objects.filter(store_id=store_id, name=value).exists():
                 raise serializers.ValidationError(
-                    "An expense category with this name already exists for this company."
+                    "An expense category with this name already exists for this store."
                 )
         return value 

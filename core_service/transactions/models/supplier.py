@@ -5,6 +5,7 @@ from decimal import Decimal
 
 class Supplier(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    store_id = models.ForeignKey('companies.Store', on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     email = models.EmailField(null=True, blank=True, unique=True)
     phone = models.CharField(max_length=20, null=True, blank=True)

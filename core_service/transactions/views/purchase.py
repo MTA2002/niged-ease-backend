@@ -15,23 +15,23 @@ from rest_framework import serializers
 
 class PurchaseListView(APIView):
     @extend_schema(
-        description="Get a list of all purchases",
+        description="Get a list of all purchases for a specific store",
         responses={200: PurchaseSerializer(many=True)}
     )
-    def get(self, request: Request):
-        purchases = Purchase.objects.all()
+    def get(self, request: Request, store_id):
+        purchases = Purchase.objects.filter(store_id=store_id)
         serializer = PurchaseSerializer(purchases, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
     @extend_schema(
-        description="Create a new purchase with associated purchase items and update inventory",
+        description="Create a new purchase with associated purchase items and update inventory for a specific store",
         request=PurchaseSerializer,
         responses={
             201: PurchaseSerializer,
             400: OpenApiResponse(description="Invalid data")
         }
     )
-    def post(self, request: Request):
+    def post(self, request: Request, store_id):
         purchase_serializer = PurchaseSerializer(data=request.data)
         
         if purchase_serializer.is_valid():
@@ -45,27 +45,27 @@ class PurchaseListView(APIView):
 
 
 class PurchaseDetailView(APIView):
-    def get_purchase(self, id):
+    def get_purchase(self, id, store_id):
         try:
-            purchase = Purchase.objects.get(pk=id)
+            purchase = Purchase.objects.get(pk=id, store_id=store_id)
             return purchase
         except Purchase.DoesNotExist:
             raise Http404
     
     @extend_schema(
-        description="Get a specific purchase by ID",
+        description="Get a specific purchase by ID for a specific store",
         responses={
             200: PurchaseSerializer,
             404: OpenApiResponse(description="Purchase not found")
         }
     )
-    def get(self, request: Request, id):
-        purchase = self.get_purchase(id)
+    def get(self, request: Request, id, store_id):
+        purchase = self.get_purchase(id, store_id)
         serializer = PurchaseSerializer(purchase)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
-        description="Update a purchase, including its associated purchase items, and update inventory",
+        description="Update a purchase, including its associated purchase items, and update inventory for a specific store",
         request=PurchaseSerializer,
         responses={
             200: PurchaseSerializer,
@@ -73,8 +73,9 @@ class PurchaseDetailView(APIView):
             404: OpenApiResponse(description="Purchase not found")
         }
     )
-    def put(self, request: Request, id):
-        purchase = self.get_purchase(id)
+    def put(self, request: Request, id, store_id):
+        purchase = self.get_purchase(id, store_id)
+        request.data['store_id'] = store_id
         
         # Store the items data but don't remove it from request
         items_data = request.data.get('items', [])
@@ -98,14 +99,14 @@ class PurchaseDetailView(APIView):
         return Response(purchase_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
-        description="Delete a purchase",
+        description="Delete a purchase for a specific store",
         responses={
             204: OpenApiResponse(description="Purchase deleted successfully"),
             404: OpenApiResponse(description="Purchase not found")
         }
     )
-    def delete(self, request: Request, id):
-        purchase = self.get_purchase(id)
+    def delete(self, request: Request, id, store_id):
+        purchase = self.get_purchase(id, store_id)
         purchase.delete()
         return Response({'message': 'Purchase deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
@@ -115,7 +116,7 @@ class PurchaseItemListView(APIView):
         description="Get a list of all purchase items for a specific purchase",
         responses={200: PurchaseItemSerializer(many=True)}
     )
-    def get(self, request: Request, purchase_id):
+    def get(self, request: Request, purchase_id, store_id=None):
         items = PurchaseItem.objects.filter(purchase_id=purchase_id)
         serializer = PurchaseItemSerializer(items, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
@@ -129,9 +130,9 @@ class PurchaseItemListView(APIView):
             404: OpenApiResponse(description="Purchase not found")
         }
     )
-    def post(self, request: Request, purchase_id):
+    def post(self, request: Request, purchase_id, store_id=None):
         try:
-            purchase = Purchase.objects.get(id=purchase_id)
+            purchase = Purchase.objects.get(id=purchase_id, store_id=store_id)
             request.data['purchase'] = purchase_id # type: ignore
             serializer = PurchaseItemSerializer(data=request.data)
             if serializer.is_valid():
@@ -162,7 +163,7 @@ class PurchaseItemDetailView(APIView):
             404: OpenApiResponse(description="Purchase item not found")
         }
     )
-    def get(self, request: Request, purchase_id, item_id):
+    def get(self, request: Request, purchase_id, item_id, store_id=None):
         item = self.get_item(purchase_id, item_id)
         serializer = PurchaseItemSerializer(item)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
@@ -176,9 +177,9 @@ class PurchaseItemDetailView(APIView):
             404: OpenApiResponse(description="Purchase or item not found")
         }
     )
-    def put(self, request: Request, purchase_id, item_id):
+    def put(self, request: Request, purchase_id, item_id, store_id=None):
         try:
-            purchase = Purchase.objects.get(id=purchase_id)
+            purchase = Purchase.objects.get(id=purchase_id, store_id=store_id)
             item = self.get_item(purchase_id, item_id)
             
             request.data['purchase'] = purchase_id # type: ignore
@@ -202,21 +203,21 @@ class PurchaseItemDetailView(APIView):
             404: OpenApiResponse(description="Purchase or item not found")
         }
     )
-    def delete(self, request: Request, purchase_id, item_id):
+    def delete(self, request: Request, purchase_id, item_id, store_id=None):
         try:
-            purchase = Purchase.objects.get(id=purchase_id)
+            purchase = Purchase.objects.get(id=purchase_id, store_id=store_id)
             item = self.get_item(purchase_id, item_id)
             
             try:
                 inventory = Inventory.objects.get(
                     product=item.product,
-                    store=purchase.store
+                    store=purchase.store_id
                 )
                 inventory.quantity -= item.quantity
                 inventory.save()
             except Inventory.DoesNotExist:
                 return Response(
-                    {'error': f'No inventory record found for product {item.product.name} in store {purchase.store.name}'},
+                    {'error': f'No inventory record found for product {item.product.name} in store {purchase.store_id.name}'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             

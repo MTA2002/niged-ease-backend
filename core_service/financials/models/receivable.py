@@ -1,17 +1,17 @@
 from django.db import models
 import uuid
 
-from companies.models.company import Company
+from companies.models.store import Store
 from companies.models.currency import Currency
 from transactions.models import Sale
 
 class Receivable(models.Model):
   
   id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
-  company = models.ForeignKey(
-    Company,
+  store_id = models.ForeignKey(
+    Store,
     on_delete=models.CASCADE,
-    related_name='company_receivables',
+    related_name='store_receivables',
     null=False
   )
 

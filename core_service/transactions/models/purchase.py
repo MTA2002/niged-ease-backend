@@ -10,8 +10,7 @@ class Purchase(models.Model):
     PAID = 'PAID', 'Paid'
 
   id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-  company = models.ForeignKey('companies.Company', on_delete=models.CASCADE)
-  store = models.ForeignKey('inventory.Store', on_delete=models.CASCADE)
+  store_id = models.ForeignKey('companies.Store', on_delete=models.CASCADE)
   supplier = models.ForeignKey('transactions.Supplier', on_delete=models.PROTECT)
   total_amount = models.DecimalField(max_digits=19, decimal_places=4)
   currency = models.ForeignKey('companies.Currency', on_delete=models.SET_NULL, null=True)
@@ -20,7 +19,7 @@ class Purchase(models.Model):
   is_credit = models.BooleanField(default=False)
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
-
+  
   class Meta:
     db_table = 'purchases'
     ordering = ['-created_at']
@@ -34,7 +33,7 @@ class Purchase(models.Model):
       try:
         inventory = Inventory.objects.get(
           product=item.product,
-          store=self.store
+          store=self.store_id
         )
         inventory.quantity += item.quantity
         inventory.save()
@@ -42,6 +41,6 @@ class Purchase(models.Model):
         # If inventory doesn't exist, create a new record
         Inventory.objects.create(
           product=item.product,
-          store=self.store,
+          store=self.store_id,
           quantity=item.quantity
         )

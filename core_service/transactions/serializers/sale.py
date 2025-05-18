@@ -2,13 +2,11 @@
 from rest_framework import serializers
 from inventory.models.product import Product
 from transactions.models import Sale
-from companies.serializers.company import CompanySerializer
 from inventory.serializers.store import StoreSerializer
 from transactions.serializers.customer import CustomerSerializer
 from companies.serializers.currency import CurrencySerializer
 from transactions.serializers.payment_mode import PaymentModeSerializer
-from companies.models.company import Company
-from inventory.models.store import Store
+from companies.models.store import Store
 from inventory.models.inventory import Inventory
 from transactions.models.customer import Customer
 from companies.models.currency import Currency
@@ -18,7 +16,6 @@ from financials.models.receivable import Receivable
 
 
 class SaleSerializer(serializers.ModelSerializer):
-    company_id = serializers.UUIDField(write_only=True)
     store_id = serializers.UUIDField(write_only=True)
     customer_id = serializers.UUIDField(write_only=True)
     currency_id = serializers.UUIDField(write_only=True, required=False)
@@ -29,7 +26,6 @@ class SaleSerializer(serializers.ModelSerializer):
             child=serializers.CharField()
         ),
     )
-    company = CompanySerializer(read_only=True)
     store = StoreSerializer(read_only=True)
     customer = CustomerSerializer(read_only=True)
     currency = CurrencySerializer(read_only=True)
@@ -39,7 +35,7 @@ class SaleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sale
         fields = [
-            'id', 'company_id', 'company', 'store_id', 'store', 
+            'id', 'store_id', 'store', 
             'customer_id', 'customer', 'total_amount', 
             'currency_id', 'currency', 'payment_mode_id', 'payment_mode',
             'is_credit', 'created_at', 'updated_at', 'status',
@@ -47,7 +43,6 @@ class SaleSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'status']
         extra_kwargs = {
-            'company_id': {'required': True},
             'store_id': {'required': True},
             'customer_id': {'required': True},
             
@@ -56,9 +51,8 @@ class SaleSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         """
         Validate the input data for creating a Sale.
-        Ensure that the company, store, and customer exist.
+        Ensure that the store and customer exist.
         """
-        company_id = attrs.get('company_id')
         store_id = attrs.get('store_id')
         customer_id = attrs.get('customer_id')
         given_amount = attrs.get('total_amount')
@@ -112,10 +106,9 @@ class SaleSerializer(serializers.ModelSerializer):
         if given_amount < 0:
             raise serializers.ValidationError("Given amount cannot be negative.")
         try:
-            Company.objects.get(id=company_id)
             Store.objects.get(id=store_id)
             Customer.objects.get(id=customer_id)
-        except (Company.DoesNotExist, Store.DoesNotExist, Customer.DoesNotExist) as e:
+        except (Store.DoesNotExist, Customer.DoesNotExist) as e:
             raise serializers.ValidationError(str(e))
 
         return super().validate(attrs)
@@ -123,7 +116,6 @@ class SaleSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Extract items and related IDs from validated data
         items_data = validated_data.pop('items')
-        company_id = validated_data.pop('company_id')
         store_id = validated_data.pop('store_id')
         customer_id = validated_data.pop('customer_id')
         currency_id = validated_data.pop('currency_id', None)
@@ -144,7 +136,6 @@ class SaleSerializer(serializers.ModelSerializer):
 
         try:
             # Fetch related objects
-            company = Company.objects.get(id=company_id)
             store = Store.objects.get(id=store_id)
             customer = Customer.objects.get(id=customer_id)
             
@@ -158,8 +149,7 @@ class SaleSerializer(serializers.ModelSerializer):
             
             # Create the Sale instance
             sale = Sale.objects.create(
-                company=company,
-                store=store,
+                store_id=store,
                 customer=customer,
                 status=status,
                 **validated_data
@@ -195,7 +185,7 @@ class SaleSerializer(serializers.ModelSerializer):
             if status in [Sale.SaleStatus.UNPAID, Sale.SaleStatus.PARTIALLY_PAID]:
                 receivable_amount = actual_amount - total_amount
                 Receivable.objects.create(
-                    company=company,
+                    store_id=store,
                     sale=sale,
                     amount=receivable_amount,
                     currency=currency or sale.currency
@@ -204,7 +194,7 @@ class SaleSerializer(serializers.ModelSerializer):
             sale.save()
             return sale
             
-        except (Company.DoesNotExist, Store.DoesNotExist, Customer.DoesNotExist,
+        except (Store.DoesNotExist, Customer.DoesNotExist,
                 Currency.DoesNotExist, PaymentMode.DoesNotExist, Product.DoesNotExist,
                 Inventory.DoesNotExist) as e:
             raise serializers.ValidationError(str(e))
@@ -288,7 +278,7 @@ class SaleSerializer(serializers.ModelSerializer):
             if status in [Sale.SaleStatus.UNPAID, Sale.SaleStatus.PARTIALLY_PAID]:
                 receivable_amount = actual_amount - total_amount
                 Receivable.objects.create(
-                    company=instance.company,
+                    store_id=instance.store,
                     sale=instance,
                     amount=receivable_amount,
                     currency=instance.currency

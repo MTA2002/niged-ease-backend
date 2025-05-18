@@ -1,7 +1,9 @@
 from django.db import models
 import uuid
+from companies.models.store import Store
 class Color(models.Model):
   id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
+  store_id = models.ForeignKey('companies.Store', on_delete=models.CASCADE)
   name = models.CharField(max_length=100, unique=True)
   color_code = models.CharField(max_length=7, unique=True)
   created_at = models.DateTimeField(auto_now_add=True)
@@ -10,7 +12,6 @@ class Color(models.Model):
   
   class Meta:
     db_table = 'colors'
-    unique_together = ('name', 'color_code')
 
   def __str__(self):
     return self.name

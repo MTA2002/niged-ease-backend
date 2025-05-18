@@ -13,8 +13,8 @@ class ExpenseCategoryListView(APIView):
         description="Get a list of all expense categories",
         responses={200: ExpenseCategorySerializer(many=True)}
     )
-    def get(self, request: Request):
-        expense_categories = ExpenseCategory.objects.all()
+    def get(self, request: Request, store_id):
+        expense_categories = ExpenseCategory.objects.filter(store_id=store_id)
         serializer = ExpenseCategorySerializer(expense_categories, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
@@ -26,7 +26,7 @@ class ExpenseCategoryListView(APIView):
             400: OpenApiResponse(description="Invalid data")
         }
     )
-    def post(self, request: Request):
+    def post(self, request: Request, store_id):
         serializer = ExpenseCategorySerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -35,9 +35,9 @@ class ExpenseCategoryListView(APIView):
 
 
 class ExpenseCategoryDetailView(APIView):
-    def get_category(self, id):
+    def get_category(self, id, store_id):
         try:
-            category = ExpenseCategory.objects.get(pk=id)
+            category = ExpenseCategory.objects.get(pk=id, store_id=store_id)
             return category
         except ExpenseCategory.DoesNotExist:
             raise Http404
@@ -49,8 +49,8 @@ class ExpenseCategoryDetailView(APIView):
             404: OpenApiResponse(description="Expense category not found")
         }
     )
-    def get(self, request: Request, id):
-        category = self.get_category(id)
+    def get(self, request: Request, id, store_id):
+        category = self.get_category(id, store_id)
         serializer = ExpenseCategorySerializer(category)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -63,8 +63,8 @@ class ExpenseCategoryDetailView(APIView):
             404: OpenApiResponse(description="Expense category not found")
         }
     )
-    def put(self, request: Request, id):
-        category = self.get_category(id)
+    def put(self, request: Request, id, store_id):
+        category = self.get_category(id, store_id)
         serializer = ExpenseCategorySerializer(category, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -78,7 +78,7 @@ class ExpenseCategoryDetailView(APIView):
             404: OpenApiResponse(description="Expense category not found")
         }
     )
-    def delete(self, request: Request, id):
-        category = self.get_category(id)
+    def delete(self, request: Request, id, store_id):
+        category = self.get_category(id, store_id)
         category.delete()
         return Response({'message': 'Expense category deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

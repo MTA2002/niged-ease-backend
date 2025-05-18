@@ -1,3 +1,5 @@
+import os
+import requests
 from rest_framework.views import APIView
 from rest_framework.decorators import permission_classes, authentication_classes
 from rest_framework.request import Request
@@ -137,10 +139,29 @@ class VerifyOTPView(APIView):
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
 
+        if user.role == 'stock_manager' or user.role == 'sales':
+            core_service_url = os.getenv('CORE_SERVICE_URL', 'http://localhost:8000')
+            headers = {
+                'Authorization': f'Bearer {access_token}'
+            }
+            response = requests.get(f'{core_service_url}/companies/stores/{user.assigned_store}/', headers=headers)
+            if response.status_code != 200:
+                stores = None
+            
+            stores = response.json()
+        else:
+            core_service_url = os.getenv('CORE_SERVICE_URL', 'http://localhost:8000')
+            headers = {
+                'Authorization': f'Bearer {access_token}'
+            }
+            response = requests.get(f'{core_service_url}/companies/stores/', headers=headers)
+            stores = response.json()
+
         return Response({
             'access': access_token,
             'refresh': str(refresh),
-            'role' : user.role
+            'role' : user.role,
+            'stores' : stores
         }, status=status.HTTP_200_OK)
 
 
@@ -304,6 +325,7 @@ class VerifyTokenView(APIView):
             access_token = AccessToken(token)
             user_id = access_token.get('user_id')
             user = User.objects.get(id=user_id)
+            
 
             return Response({
                 'is_valid': True,

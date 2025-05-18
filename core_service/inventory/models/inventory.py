@@ -3,7 +3,7 @@ import uuid
 from decimal import Decimal
 
 from inventory.models.product import Product
-from inventory.models.store import Store
+from companies.models.store import Store
 
 class Inventory(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)

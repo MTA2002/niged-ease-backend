@@ -15,26 +15,26 @@ app_name = 'transactions'
 
 urlpatterns = [
     # Customer URLs
-    path('customers/', CustomerListView.as_view(), name='customer-list'),
-    path('customers/<int:id>/', CustomerDetailView.as_view(), name='customer-detail'),
+    path('stores/<uuid:store_id>/customers/', CustomerListView.as_view(), name='customer-list'),
+    path('stores/<uuid:store_id>/customers/<uuid:id>/', CustomerDetailView.as_view(), name='customer-detail'),
     
     # Supplier URLs
-    path('suppliers/', SupplierListView.as_view(), name='supplier-list'),
-    path('suppliers/<int:id>/', SupplierDetailView.as_view(), name='supplier-detail'),
+    path('stores/<uuid:store_id>/suppliers/', SupplierListView.as_view(), name='supplier-list'),
+    path('stores/<uuid:store_id>/suppliers/<uuid:id>/', SupplierDetailView.as_view(), name='supplier-detail'),
     
     # Sale URLs
-    path('sales/', SaleListView.as_view(), name='sale-list'),
-    path('sales/<uuid:id>/', SaleDetailView.as_view(), name='sale-detail'),
-    path('sales/<uuid:sale_id>/items/', SaleItemListView.as_view(), name='sale-item-list'),
-    path('sales/<uuid:sale_id>/items/<int:item_id>/', SaleItemDetailView.as_view(), name='sale-item-detail'),
+    path('stores/<uuid:store_id>/sales/', SaleListView.as_view(), name='sale-list'),
+    path('stores/<uuid:store_id>/sales/<uuid:id>/', SaleDetailView.as_view(), name='sale-detail'),
+    path('stores/<uuid:store_id>/sales/<uuid:sale_id>/items/', SaleItemListView.as_view(), name='sale-item-list'),
+    path('stores/<uuid:store_id>/sales/<uuid:sale_id>/items/<int:item_id>/', SaleItemDetailView.as_view(), name='sale-item-detail'),
     
     # Purchase URLs
-    path('purchases/', PurchaseListView.as_view(), name='purchase-list'),
-    path('purchases/<uuid:id>/', PurchaseDetailView.as_view(), name='purchase-detail'),
-    path('purchases/<uuid:purchase_id>/items/', PurchaseItemListView.as_view(), name='purchase-item-list'),
-    path('purchases/<uuid:purchase_id>/items/<int:item_id>/', PurchaseItemDetailView.as_view(), name='purchase-item-detail'),
+    path('stores/<uuid:store_id>/purchases/', PurchaseListView.as_view(), name='purchase-list'),
+    path('stores/<uuid:store_id>/purchases/<uuid:id>/', PurchaseDetailView.as_view(), name='purchase-detail'),
+    path('stores/<uuid:store_id>/purchases/<uuid:purchase_id>/items/', PurchaseItemListView.as_view(), name='purchase-item-list'),
+    path('stores/<uuid:store_id>/purchases/<uuid:purchase_id>/items/<int:item_id>/', PurchaseItemDetailView.as_view(), name='purchase-item-detail'),
 
      # Payment Mode URLs
-    path('payment-modes/', PaymentModeListView.as_view(), name='payment-mode-list'),
-    path('payment-modes/<uuid:id>/', PaymentModeDetailView.as_view(), name='payment-mode-detail'),
+    path('stores/<uuid:store_id>/payment-modes/', PaymentModeListView.as_view(), name='payment-mode-list'),
+    path('stores/<uuid:store_id>/payment-modes/<uuid:id>/', PaymentModeDetailView.as_view(), name='payment-mode-detail'),
 ] 
