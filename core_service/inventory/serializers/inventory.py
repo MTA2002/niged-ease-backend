@@ -1,10 +1,9 @@
 from rest_framework import serializers
 from inventory.models.inventory import Inventory
 from inventory.models.product import Product
-from inventory.models.store import Store
+from companies.models.store import Store
 from inventory.serializers.product import ProductSerializer
-from inventory.serializers.store import StoreSerializer
-from companies.models.company import Company
+from companies.serializers.store import StoreSerializer
 
 class InventorySerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
@@ -27,7 +26,7 @@ class InventorySerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Validate that the product and store belong to the same company.
+        Validate that the product belongs to the given store.
         """
         product_id = data.get('product_id')
         store_id = data.get('store_id')
@@ -38,9 +37,9 @@ class InventorySerializer(serializers.ModelSerializer):
         except (Product.DoesNotExist, Store.DoesNotExist):
             raise serializers.ValidationError("Invalid product or store ID")
         
-        if product.company != store.company: # type: ignore
+        if product.store_id.id != store.id:
             raise serializers.ValidationError(
-                "Product and store must belong to the same company"
+                "Product must belong to the specified store"
             )
         
         return data

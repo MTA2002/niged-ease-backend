@@ -13,8 +13,8 @@ class CollectionListView(APIView):
         description="Get a list of all collections",
         responses={200: CollectionSerializer(many=True)}
     )
-    def get(self, request: Request):
-        collections = Collection.objects.all()
+    def get(self, request: Request, store_id):
+        collections = Collection.objects.filter(store_id=store_id)
         serializer = CollectionSerializer(collections, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
@@ -26,18 +26,30 @@ class CollectionListView(APIView):
             400: OpenApiResponse(description="Invalid data")
         }
     )
-    def post(self, request: Request):
-        serializer = CollectionSerializer(data=request.data)
+    def post(self, request: Request, store_id):
+        # Add store_id to request data if it's not there
+        request_data = request.data.copy() # type: ignore
+        
+        # Make sure store_id is used from the URL path parameter
+        # request_data['store_id'] = store_id
+        
+        # Debug the incoming data
+        print("POST request data:", request_data)
+        
+        serializer = CollectionSerializer(data=request_data)
         if serializer.is_valid():
             serializer.save()
             return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        
+        # If validation fails, print the errors
+        print("Validation errors:", serializer.errors)
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CollectionDetailView(APIView):
-    def get_collection(self, id):
+    def get_collection(self, id, store_id):
         try:
-            collection = Collection.objects.get(pk=id)
+            collection = Collection.objects.get(pk=id, store_id=store_id)
             return collection
         except Collection.DoesNotExist:
             raise Http404
@@ -49,8 +61,8 @@ class CollectionDetailView(APIView):
             404: OpenApiResponse(description="Collection not found")
         }
     )
-    def get(self, request: Request, id):
-        collection = self.get_collection(id)
+    def get(self, request: Request, id, store_id):
+        collection = self.get_collection(id, store_id)
         serializer = CollectionSerializer(collection)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -63,8 +75,8 @@ class CollectionDetailView(APIView):
             404: OpenApiResponse(description="Collection not found")
         }
     )
-    def put(self, request: Request, id):
-        collection = self.get_collection(id)
+    def put(self, request: Request, id, store_id):
+        collection = self.get_collection(id, store_id)
         serializer = CollectionSerializer(collection, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -78,7 +90,7 @@ class CollectionDetailView(APIView):
             404: OpenApiResponse(description="Collection not found")
         }
     )
-    def delete(self, request: Request, id):
-        collection = self.get_collection(id)
+    def delete(self, request: Request, id, store_id):
+        collection = self.get_collection(id, store_id)
         collection.delete()
         return Response({'message': 'Collection deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

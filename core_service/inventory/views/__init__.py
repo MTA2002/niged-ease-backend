@@ -1,7 +1,6 @@
 from .product import ProductListView, ProductDetailView
 from .product_category import ProductCategoryListView, ProductCategoryDetailView
 from .product_unit import ProductUnitListView, ProductUnitDetailView
-from .store import StoreListView, StoreDetailView
 
 __all__ = [
     'ProductListView',
@@ -9,7 +8,5 @@ __all__ = [
     'ProductCategoryListView',
     'ProductCategoryDetailView',
     'ProductUnitListView',
-    'ProductUnitDetailView',
-    'StoreListView',
-    'StoreDetailView'
+    'ProductUnitDetailView'
 ] 

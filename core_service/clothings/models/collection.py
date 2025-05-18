@@ -3,7 +3,7 @@ import uuid
 
 class Collection(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
-    company_id = models.ForeignKey('companies.Company', on_delete=models.CASCADE)
+    store_id = models.ForeignKey('companies.Store', on_delete=models.CASCADE)
     season_id = models.ForeignKey('clothings.Season', on_delete=models.CASCADE)    
     name = models.CharField(max_length=100, unique=True)
     release_date = models.DateField()
@@ -13,7 +13,6 @@ class Collection(models.Model):
 
     class Meta:
         db_table = 'collections'
-        unique_together = ('company_id', 'name')
 
     def __str__(self):
         return self.name

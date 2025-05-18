@@ -13,8 +13,8 @@ class PaymentInListView(APIView):
         description="Get a list of all incoming payments",
         responses={200: PaymentInSerializer(many=True)}
     )
-    def get(self, request: Request):
-        payments = PaymentIn.objects.all()
+    def get(self, request: Request, store_id):
+        payments = PaymentIn.objects.filter(store_id=store_id)
         serializer = PaymentInSerializer(payments, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
@@ -26,7 +26,7 @@ class PaymentInListView(APIView):
             400: OpenApiResponse(description="Invalid data")
         }
     )
-    def post(self, request: Request):
+    def post(self, request: Request, store_id):
         serializer = PaymentInSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -35,9 +35,9 @@ class PaymentInListView(APIView):
 
 
 class PaymentInDetailView(APIView):
-    def get_payment(self, id):
+    def get_payment(self, id, store_id):
         try:
-            payment = PaymentIn.objects.get(pk=id)
+            payment = PaymentIn.objects.get(pk=id, store_id=store_id)
             return payment
         except PaymentIn.DoesNotExist:
             raise Http404
@@ -49,8 +49,8 @@ class PaymentInDetailView(APIView):
             404: OpenApiResponse(description="Payment not found")
         }
     )
-    def get(self, request: Request, id):
-        payment = self.get_payment(id)
+    def get(self, request: Request, id, store_id):
+        payment = self.get_payment(id, store_id)
         serializer = PaymentInSerializer(payment)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -63,8 +63,8 @@ class PaymentInDetailView(APIView):
             404: OpenApiResponse(description="Payment not found")
         }
     )
-    def put(self, request: Request, id):
-        payment = self.get_payment(id)
+    def put(self, request: Request, id, store_id):
+        payment = self.get_payment(id, store_id)
         serializer = PaymentInSerializer(payment, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -78,7 +78,7 @@ class PaymentInDetailView(APIView):
             404: OpenApiResponse(description="Payment not found")
         }
     )
-    def delete(self, request: Request, id):
-        payment = self.get_payment(id)
+    def delete(self, request: Request, id, store_id):
+        payment = self.get_payment(id, store_id)
         payment.delete()
         return Response({'message': 'Payment in deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

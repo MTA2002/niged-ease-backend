@@ -7,7 +7,7 @@ class ReceivableSerializer(serializers.ModelSerializer):
         model = Receivable
         fields = [
             'id',
-            'company',
+            'store_id',
             'sale',
             'amount',
             'currency',
@@ -16,7 +16,7 @@ class ReceivableSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
         extra_kwargs = {
-            'company': {'required': True},
+            'store_id': {'required': True},
             'sale': {'required': True},
             'amount': {'required': True},
             'currency': {'required': True}
@@ -24,14 +24,14 @@ class ReceivableSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Validate that the sale belongs to the same company.
+        Validate that the sale belongs to the same store.
         """
         sale = data.get('sale')
-        company = data.get('company')
+        store_id = data.get('store_id')
         
-        if sale and company and sale.company != company:
+        if sale and store_id and sale.store_id != store_id:
             raise serializers.ValidationError(
-                "The selected sale does not belong to this company."
+                "The selected sale does not belong to this store."
             )
         
         return data 

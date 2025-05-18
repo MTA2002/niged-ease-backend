@@ -13,8 +13,8 @@ class ExpenseListView(APIView):
         description="Get a list of all expenses",
         responses={200: ExpenseSerializer(many=True)}
     )
-    def get(self, request: Request):
-        expenses = Expense.objects.all()
+    def get(self, request: Request, store_id):
+        expenses = Expense.objects.filter(store_id=store_id)
         serializer = ExpenseSerializer(expenses, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
@@ -26,7 +26,7 @@ class ExpenseListView(APIView):
             400: OpenApiResponse(description="Invalid data")
         }
     )
-    def post(self, request: Request):
+    def post(self, request: Request, store_id):
         serializer = ExpenseSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -35,9 +35,9 @@ class ExpenseListView(APIView):
 
 
 class ExpenseDetailView(APIView):
-    def get_expense(self, id):
+    def get_expense(self, id, store_id):
         try:
-            expense = Expense.objects.get(pk=id)
+            expense = Expense.objects.get(pk=id, store_id=store_id)
             return expense
         except Expense.DoesNotExist:
             raise Http404
@@ -49,8 +49,8 @@ class ExpenseDetailView(APIView):
             404: OpenApiResponse(description="Expense not found")
         }
     )
-    def get(self, request: Request, id):
-        expense = self.get_expense(id)
+    def get(self, request: Request, id, store_id):
+        expense = self.get_expense(id, store_id)
         serializer = ExpenseSerializer(expense)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -63,8 +63,8 @@ class ExpenseDetailView(APIView):
             404: OpenApiResponse(description="Expense not found")
         }
     )
-    def put(self, request: Request, id):
-        expense = self.get_expense(id)
+    def put(self, request: Request, id, store_id):
+        expense = self.get_expense(id, store_id)
         serializer = ExpenseSerializer(expense, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -78,7 +78,7 @@ class ExpenseDetailView(APIView):
             404: OpenApiResponse(description="Expense not found")
         }
     )
-    def delete(self, request: Request, id):
-        expense = self.get_expense(id)
+    def delete(self, request: Request, id, store_id):
+        expense = self.get_expense(id, store_id)
         expense.delete()
         return Response({'message': 'Expense deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

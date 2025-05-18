@@ -11,6 +11,10 @@ from companies.views.currency import (
     CurrencyListView,
     CurrencyDetailView
 )
+from companies.views.store import (
+    StoreListView,
+    StoreDetailView
+)
 
 urlpatterns = [
     # Company URLs
@@ -24,4 +28,8 @@ urlpatterns = [
     # Currency URLs
     path('currencies/', CurrencyListView.as_view(), name='currency-list'),
     path('currencies/<uuid:id>/', CurrencyDetailView.as_view(), name='currency-detail'),
+    
+    # Store URLs
+    path('stores/', StoreListView.as_view(), name='store-list'),
+    path('stores/<uuid:id>/', StoreDetailView.as_view(), name='store-detail'),
 ] 

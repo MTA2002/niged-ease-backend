@@ -13,8 +13,8 @@ class ReceivableListView(APIView):
         description="Get a list of all receivables",
         responses={200: ReceivableSerializer(many=True)}
     )
-    def get(self, request: Request):
-        receivables = Receivable.objects.all()
+    def get(self, request: Request, store_id):
+        receivables = Receivable.objects.filter(store_id=store_id)
         serializer = ReceivableSerializer(receivables, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
@@ -26,7 +26,7 @@ class ReceivableListView(APIView):
             400: OpenApiResponse(description="Invalid data")
         }
     )
-    def post(self, request: Request):
+    def post(self, request: Request, store_id):
         serializer = ReceivableSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -35,9 +35,9 @@ class ReceivableListView(APIView):
 
 
 class ReceivableDetailView(APIView):
-    def get_receivable(self, id):
+    def get_receivable(self, id, store_id):
         try:
-            receivable = Receivable.objects.get(pk=id)
+            receivable = Receivable.objects.get(pk=id, store_id=store_id)
             return receivable
         except Receivable.DoesNotExist:
             raise Http404
@@ -49,8 +49,8 @@ class ReceivableDetailView(APIView):
             404: OpenApiResponse(description="Receivable not found")
         }
     )
-    def get(self, request: Request, id):
-        receivable = self.get_receivable(id)
+    def get(self, request: Request, id, store_id):
+        receivable = self.get_receivable(id, store_id)
         serializer = ReceivableSerializer(receivable)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -63,8 +63,8 @@ class ReceivableDetailView(APIView):
             404: OpenApiResponse(description="Receivable not found")
         }
     )
-    def put(self, request: Request, id):
-        receivable = self.get_receivable(id)
+    def put(self, request: Request, id, store_id):
+        receivable = self.get_receivable(id, store_id)
         serializer = ReceivableSerializer(receivable, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -78,7 +78,7 @@ class ReceivableDetailView(APIView):
             404: OpenApiResponse(description="Receivable not found")
         }
     )
-    def delete(self, request: Request, id):
-        receivable = self.get_receivable(id)
+    def delete(self, request: Request, id, store_id):
+        receivable = self.get_receivable(id, store_id)
         receivable.delete()
         return Response({'message': 'Receivable deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

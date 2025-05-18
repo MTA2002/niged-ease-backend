@@ -7,7 +7,7 @@ class PayableSerializer(serializers.ModelSerializer):
         model = Payable
         fields = [
             'id',
-            'company',
+            'store_id',
             'purchase',
             'amount',
             'currency',
@@ -16,7 +16,7 @@ class PayableSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
         extra_kwargs = {
-            'company': {'required': True},
+            'store_id': {'required': True},
             'purchase': {'required': True},
             'amount': {'required': True},
             'currency': {'required': True}
@@ -24,14 +24,14 @@ class PayableSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Validate that the purchase belongs to the same company.
+        Validate that the purchase belongs to the same store.
         """
         purchase = data.get('purchase')
-        company = data.get('company')
+        store_id = data.get('store_id')
         
-        if purchase and company and purchase.company != company:
+        if purchase and store_id and purchase.store_id != store_id:
             raise serializers.ValidationError(
-                "The selected purchase does not belong to this company."
+                "The selected purchase does not belong to this store."
             )
         
         return data 

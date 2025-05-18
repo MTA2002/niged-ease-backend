@@ -4,8 +4,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
 from drf_spectacular.utils import extend_schema, OpenApiResponse
-from inventory.models.store import Store
-from inventory.serializers.store import StoreSerializer
+from companies.models.store import Store
+from companies.serializers.store import StoreSerializer
 
 
 class StoreListView(APIView):
@@ -81,4 +81,4 @@ class StoreDetailView(APIView):
     def delete(self, request: Request, id):
         store = self.get_store(id)
         store.delete()
-        return Response({'message': 'Store deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'message': 'Store deleted successfully'}, status=status.HTTP_204_NO_CONTENT) 

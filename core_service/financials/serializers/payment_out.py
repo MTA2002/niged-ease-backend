@@ -15,7 +15,7 @@ class PaymentOutSerializer(serializers.ModelSerializer):
         model = PaymentOut
         fields = [
             'id',
-            'company',
+            'store_id',
             'payable',
             'purchase',
             'amount',
@@ -27,7 +27,7 @@ class PaymentOutSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
         extra_kwargs = {
-            'company': {'required': True},
+            'store_id': {'required': True},
             'payable': {'required': True},
             'purchase': {'required': True},
             'amount': {'required': True},
@@ -36,22 +36,22 @@ class PaymentOutSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Validate that the payable and purchase belong to the same company
+        Validate that the payable and purchase belong to the same store
         and the payment amount is valid.
         """
         payable = data.get('payable')
         purchase = data.get('purchase')
-        company = data.get('company')
+        store_id = data.get('store_id')
         amount = data.get('amount')
         
-        if payable and company and payable.company != company:
+        if payable and store_id and payable.store_id != store_id:
             raise serializers.ValidationError(
-                "The selected payable does not belong to this company."
+                "The selected payable does not belong to this store."
             )
             
-        if purchase and company and purchase.company != company:
+        if purchase and store_id and purchase.store_id != store_id:
             raise serializers.ValidationError(
-                "The selected purchase does not belong to this company."
+                "The selected purchase does not belong to this store."
             )
 
         if amount <= 0:
@@ -80,11 +80,7 @@ class PaymentOutSerializer(serializers.ModelSerializer):
         payable = payment.payable
         payable.amount -= payment.amount
         
-        # If payable is fully paid, delete it
-        if payable.amount <= 0:
-            payable.delete()
-        else:
-            payable.save()
+        
 
         # Update purchase status
         purchase = payment.purchase
@@ -99,13 +95,20 @@ class PaymentOutSerializer(serializers.ModelSerializer):
         )
 
         # Update purchase status based on payments
-        if total_paid >= total_purchase_amount:
+        print('total_paid', total_paid, total_purchase_amount, Purchase.objects.get(id=purchase.id).total_amount)
+        if total_paid + Purchase.objects.get(id=purchase.id).total_amount >= total_purchase_amount:
             purchase.status = Purchase.PurchaseStatus.PAID
         elif total_paid > 0:
             purchase.status = Purchase.PurchaseStatus.PARTIALLY_PAID
         else:
             purchase.status = Purchase.PurchaseStatus.UNPAID
         
+        # If payable is fully paid, delete it
+        if payable.amount <= 0:
+            payable.delete()
+        else:
+            payable.save()
+            
         purchase.save()
 
         return payment

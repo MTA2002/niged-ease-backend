@@ -17,8 +17,8 @@ class SaleListView(APIView):
         description="Get a list of all sales",
         responses={200: SaleSerializer(many=True)}
     )
-    def get(self, request: Request):
-        sales = Sale.objects.all()
+    def get(self, request: Request, store_id):
+        sales = Sale.objects.filter(store_id=store_id)
         serializer = SaleSerializer(sales, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
@@ -30,10 +30,8 @@ class SaleListView(APIView):
             400: OpenApiResponse(description="Invalid data")
         }
     )
-    def post(self, request: Request):
-        
+    def post(self, request: Request, store_id):
         sale_serializer = SaleSerializer(data=request.data)
-        
         
         if sale_serializer.is_valid():
             sale_serializer.save()
@@ -42,9 +40,9 @@ class SaleListView(APIView):
 
 
 class SaleDetailView(APIView):
-    def get_sale(self, id):
+    def get_sale(self, id, store_id):
         try:
-            sale = Sale.objects.get(pk=id)
+            sale = Sale.objects.get(pk=id, store_id=store_id)
             return sale
         except Sale.DoesNotExist:
             raise Http404
@@ -56,8 +54,8 @@ class SaleDetailView(APIView):
             404: OpenApiResponse(description="Sale not found")
         }
     )
-    def get(self, request: Request, id):
-        sale = self.get_sale(id)
+    def get(self, request: Request, id, store_id):
+        sale = self.get_sale(id, store_id)
         serializer = SaleSerializer(sale)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -70,9 +68,9 @@ class SaleDetailView(APIView):
             404: OpenApiResponse(description="Sale not found")
         }
     )
-    def put(self, request: Request, id):
-        sale = self.get_sale(id)
-        
+    def put(self, request: Request, id, store_id):
+        sale = self.get_sale(id, store_id)
+        request.data['store_id'] = store_id
         sale_serializer = SaleSerializer(sale, data=request.data)
         
         if sale_serializer.is_valid():
@@ -88,8 +86,8 @@ class SaleDetailView(APIView):
             404: OpenApiResponse(description="Sale not found")
         }
     )
-    def delete(self, request: Request, id):
-        sale = self.get_sale(id)
+    def delete(self, request: Request, id, store_id):
+        sale = self.get_sale(id, store_id)
         sale.delete()
         return Response({'message': 'Sale deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 

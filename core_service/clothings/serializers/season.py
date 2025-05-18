@@ -6,7 +6,7 @@ class SeasonSerializer(serializers.ModelSerializer):
         model = Season
         fields = [
             'id',
-            'company_id',
+            'store_id',
             'name',
             'start_date',
             'end_date',
@@ -17,7 +17,7 @@ class SeasonSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
         extra_kwargs = {
-            'company_id': {'required': True},
+            'store_id': {'required': True},
             'name': {'required': True},
             'start_date': {'required': True},
             'end_date': {'required': True}

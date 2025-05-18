@@ -13,8 +13,8 @@ class PayableListView(APIView):
         description="Get a list of all payables",
         responses={200: PayableSerializer(many=True)}
     )
-    def get(self, request: Request):
-        payables = Payable.objects.all()
+    def get(self, request: Request, store_id):
+        payables = Payable.objects.filter(store_id=store_id)
         serializer = PayableSerializer(payables, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
@@ -26,7 +26,7 @@ class PayableListView(APIView):
             400: OpenApiResponse(description="Invalid data")
         }
     )
-    def post(self, request: Request):
+    def post(self, request: Request, store_id):
         serializer = PayableSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -35,9 +35,9 @@ class PayableListView(APIView):
 
 
 class PayableDetailView(APIView):
-    def get_payable(self, id):
+    def get_payable(self, id, store_id):
         try:
-            payable = Payable.objects.get(pk=id)
+            payable = Payable.objects.get(pk=id, store_id=store_id)
             return payable
         except Payable.DoesNotExist:
             raise Http404
@@ -49,8 +49,8 @@ class PayableDetailView(APIView):
             404: OpenApiResponse(description="Payable not found")
         }
     )
-    def get(self, request: Request, id):
-        payable = self.get_payable(id)
+    def get(self, request: Request, id, store_id):
+        payable = self.get_payable(id, store_id)
         serializer = PayableSerializer(payable)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -63,8 +63,8 @@ class PayableDetailView(APIView):
             404: OpenApiResponse(description="Payable not found")
         }
     )
-    def put(self, request: Request, id):
-        payable = self.get_payable(id)
+    def put(self, request: Request, id, store_id):
+        payable = self.get_payable(id, store_id)
         serializer = PayableSerializer(payable, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -78,7 +78,7 @@ class PayableDetailView(APIView):
             404: OpenApiResponse(description="Payable not found")
         }
     )
-    def delete(self, request: Request, id):
-        payable = self.get_payable(id)
+    def delete(self, request: Request, id, store_id):
+        payable = self.get_payable(id, store_id)
         payable.delete()
         return Response({'message': 'Payable deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

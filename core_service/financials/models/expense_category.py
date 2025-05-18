@@ -1,12 +1,12 @@
 import uuid
 from django.db import models
-from companies.models.company import Company
+from companies.models.store import Store
 
 
 class ExpenseCategory(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    company = models.ForeignKey(
-        Company,
+    store_id = models.ForeignKey(
+        Store,
         on_delete=models.CASCADE,
         related_name='expense_categories',
         null=False
@@ -18,8 +18,8 @@ class ExpenseCategory(models.Model):
 
     class Meta:
         db_table = 'expense_categories'
-        unique_together = ['company', 'name']
+        unique_together = ['store_id', 'name']
         
 
     def __str__(self):
-        return f"{self.name} - {self.company.name}"
+        return f"{self.name} - {self.store_id.name}"

@@ -13,8 +13,8 @@ class ColorListView(APIView):
         description="Get a list of all colors",
         responses={200: ColorSerializer(many=True)}
     )
-    def get(self, request: Request):
-        colors = Color.objects.all()
+    def get(self, request: Request, store_id):
+        colors = Color.objects.filter(store_id=store_id)
         serializer = ColorSerializer(colors, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
@@ -26,7 +26,7 @@ class ColorListView(APIView):
             400: OpenApiResponse(description="Invalid data")
         }
     )
-    def post(self, request: Request):
+    def post(self, request: Request, store_id):
         serializer = ColorSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -35,9 +35,9 @@ class ColorListView(APIView):
 
 
 class ColorDetailView(APIView):
-    def get_color(self, id):
+    def get_color(self, id, store_id):
         try:
-            color = Color.objects.get(pk=id)
+            color = Color.objects.get(pk=id, store_id=store_id)
             return color
         except Color.DoesNotExist:
             raise Http404
@@ -49,8 +49,8 @@ class ColorDetailView(APIView):
             404: OpenApiResponse(description="Color not found")
         }
     )
-    def get(self, request: Request, id):
-        color = self.get_color(id)
+    def get(self, request: Request, id, store_id):
+        color = self.get_color(id, store_id)
         serializer = ColorSerializer(color)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -63,8 +63,8 @@ class ColorDetailView(APIView):
             404: OpenApiResponse(description="Color not found")
         }
     )
-    def put(self, request: Request, id):
-        color = self.get_color(id)
+    def put(self, request: Request, id, store_id):
+        color = self.get_color(id, store_id)
         serializer = ColorSerializer(color, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -78,7 +78,7 @@ class ColorDetailView(APIView):
             404: OpenApiResponse(description="Color not found")
         }
     )
-    def delete(self, request: Request, id):
-        color = self.get_color(id)
+    def delete(self, request: Request, id, store_id):
+        color = self.get_color(id, store_id)
         color.delete()
         return Response({'message': 'Color deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

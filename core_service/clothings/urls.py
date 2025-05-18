@@ -10,14 +10,14 @@ from clothings.views import (
 
 urlpatterns = [
     # Color URLs
-    path('colors/', ColorListView.as_view(), name='color-list'),
-    path('colors/<uuid:id>/', ColorDetailView.as_view(), name='color-detail'),
+    path('stores/<uuid:store_id>/colors/', ColorListView.as_view(), name='color-list'),
+    path('stores/<uuid:store_id>/colors/<uuid:id>/', ColorDetailView.as_view(), name='color-detail'),
     
     # Season URLs
-    path('seasons/', SeasonListView.as_view(), name='season-list'),
-    path('seasons/<uuid:id>/', SeasonDetailView.as_view(), name='season-detail'),
+    path('stores/<uuid:store_id>/seasons/', SeasonListView.as_view(), name='season-list'),
+    path('stores/<uuid:store_id>/seasons/<uuid:id>/', SeasonDetailView.as_view(), name='season-detail'),
 
     # Collection URLs
-    path('collections/', CollectionListView.as_view(), name='collection-list'),
-    path('collections/<uuid:id>/', CollectionDetailView.as_view(), name='collection-detail'),
+    path('stores/<uuid:store_id>/collections/', CollectionListView.as_view(), name='collection-list'),
+    path('stores/<uuid:store_id>/collections/<uuid:id>/', CollectionDetailView.as_view(), name='collection-detail'),
 ] 

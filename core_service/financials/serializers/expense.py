@@ -9,7 +9,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
         model = Expense
         fields = [
             'id',
-            'company',
+            'store_id',
             'expense_category',
             'amount',
             'description',
@@ -20,26 +20,26 @@ class ExpenseSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
         extra_kwargs = {
-            'company': {'required': True},
+            'store_id': {'required': True},
             'amount': {'required': True},
         }
 
     def validate(self, data):
         """
-        Validate that the category belongs to the same company.
+        Validate that the category belongs to the same store.
         """
         from financials.models.expense_category import ExpenseCategory
         
         category_id = data.get('category_id')
-        company = data.get('company')
+        store_id = data.get('store_id')
         
-        if category_id and company:
+        if category_id and store_id:
             try:
-                category = ExpenseCategory.objects.get(id=category_id, company=company)
+                category = ExpenseCategory.objects.get(id=category_id, store_id=store_id)
                 data['category'] = category
             except ExpenseCategory.DoesNotExist:
                 raise serializers.ValidationError(
-                    "The selected category does not exist or does not belong to this company."
+                    "The selected category does not exist or does not belong to this store."
                 )
         
         return data 

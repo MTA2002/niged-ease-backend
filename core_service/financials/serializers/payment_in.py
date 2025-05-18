@@ -15,7 +15,7 @@ class PaymentInSerializer(serializers.ModelSerializer):
         model = PaymentIn
         fields = [
             'id',
-            'company',
+            'store_id',
             'receivable',
             'sale',
             'amount',
@@ -27,7 +27,7 @@ class PaymentInSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
         extra_kwargs = {
-            'company': {'required': True},
+            'store_id': {'required': True},
             'receivable': {'required': True},
             'sale': {'required': True},
             'amount': {'required': True},
@@ -36,22 +36,22 @@ class PaymentInSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Validate that the receivable and sale belong to the same company
+        Validate that the receivable and sale belong to the same store
         and the payment amount is valid.
         """
         receivable = data.get('receivable')
         sale = data.get('sale')
-        company = data.get('company')
+        store_id = data.get('store_id')
         amount = data.get('amount')
         
-        if receivable and company and receivable.company != company:
+        if receivable and store_id and receivable.store_id != store_id:
             raise serializers.ValidationError(
-                "The selected receivable does not belong to this company."
+                "The selected receivable does not belong to this store."
             )
             
-        if sale and company and sale.company != company:
+        if sale and store_id and sale.store_id != store_id:
             raise serializers.ValidationError(
-                "The selected sale does not belong to this company."
+                "The selected sale does not belong to this store."
             )
 
         if amount <= 0:
@@ -81,10 +81,7 @@ class PaymentInSerializer(serializers.ModelSerializer):
         receivable.amount -= payment.amount
         
         # If receivable is fully paid, delete it
-        if receivable.amount <= 0:
-            receivable.delete()
-        else:
-            receivable.save()
+        
 
         # Update sale status
         sale = payment.sale
@@ -99,13 +96,18 @@ class PaymentInSerializer(serializers.ModelSerializer):
         )
 
         # Update sale status based on payments
-        if total_paid >= total_sale_amount:
+        if total_paid + Sale.objects.get(id=sale.id).total_amount >= total_sale_amount:
             sale.status = Sale.SaleStatus.PAID
         elif total_paid > 0:
             sale.status = Sale.SaleStatus.PARTIALLY_PAID
         else:
             sale.status = Sale.SaleStatus.UNPAID
         
+        if receivable.amount <= 0:
+            receivable.delete()
+        else:
+            receivable.save()
+
         sale.save()
 
         return payment
