@@ -4,7 +4,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.permissions import AllowAny
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from companies.models.store import Store
 from companies.serializers.store import StoreSerializer
@@ -18,8 +17,8 @@ class StoreListView(APIView):
         description="Get a list of all stores",
         responses={200: StoreSerializer(many=True)}
     )
-    def get(self, request: Request):
-        stores = Store.objects.all()
+    def get(self, request: Request, company_id):
+        stores = Store.objects.filter(company_id=company_id)
         serializer = StoreSerializer(stores, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
@@ -31,7 +30,9 @@ class StoreListView(APIView):
             400: OpenApiResponse(description="Invalid data")
         }
     )
-    def post(self, request: Request):
+    def post(self, request: Request, company_id):
+    
+
         serializer = StoreSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -43,9 +44,9 @@ class StoreDetailView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
     
-    def get_store(self, id):
+    def get_store(self, company_id, id):
         try:
-            store = Store.objects.get(pk=id)
+            store = Store.objects.get(pk=id, company_id=company_id)
             return store
         except Store.DoesNotExist:
             raise Http404
@@ -57,8 +58,8 @@ class StoreDetailView(APIView):
             404: OpenApiResponse(description="Store not found")
         }
     )
-    def get(self, request: Request, id):
-        store = self.get_store(id)
+    def get(self, request: Request, company_id, id):
+        store = self.get_store(company_id, id)
         serializer = StoreSerializer(store)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -71,8 +72,9 @@ class StoreDetailView(APIView):
             404: OpenApiResponse(description="Store not found")
         }
     )
-    def put(self, request: Request, id):
-        store = self.get_store(id)
+    def put(self, request: Request, company_id, id):
+        store = self.get_store(company_id, id)
+        
         serializer = StoreSerializer(store, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -86,7 +88,7 @@ class StoreDetailView(APIView):
             404: OpenApiResponse(description="Store not found")
         }
     )
-    def delete(self, request: Request, id):
-        store = self.get_store(id)
+    def delete(self, request: Request, company_id, id):
+        store = self.get_store(company_id, id)
         store.delete()
         return Response({'message': 'Store deleted successfully'}, status=status.HTTP_204_NO_CONTENT) 
