@@ -12,7 +12,7 @@ from companies.serializers import SubscriptionPlanSerializer
 class SubscriptionPlanListView(generics.ListCreateAPIView):
     queryset = SubscriptionPlan.objects.filter(is_active=True)
     serializer_class = SubscriptionPlanSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @extend_schema(
         responses={
@@ -36,21 +36,16 @@ class SubscriptionPlanListView(generics.ListCreateAPIView):
                 description='Invalid request data'
             )
         },
-        description='Create a new subscription plan (admin only)'
+        description='Create a new subscription plan'
     )
     def post(self, request, *args, **kwargs):
-        if not request.user.is_staff:
-            return Response(
-                {'error': 'Only administrators can create subscription plans'},
-                status=status.HTTP_403_FORBIDDEN
-            )
         return super().post(request, *args, **kwargs)
 
 
 class SubscriptionPlanDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = SubscriptionPlan.objects.all()
     serializer_class = SubscriptionPlanSerializer
-    permission_classes = [IsAuthenticated,]
+    # permission_classes = [IsAuthenticated,]
 
     @extend_schema(
         responses={
@@ -80,7 +75,7 @@ class SubscriptionPlanDetailView(generics.RetrieveUpdateDestroyAPIView):
                 description='Subscription plan not found'
             )
         },
-        description='Update a subscription plan (admin only)'
+        description='Update a subscription plan'
     )
     def put(self, request, *args, **kwargs):
         return super().put(request, *args, **kwargs)
@@ -94,7 +89,7 @@ class SubscriptionPlanDetailView(generics.RetrieveUpdateDestroyAPIView):
                 description='Subscription plan not found'
             )
         },
-        description='Delete a subscription plan (admin only)'
+        description='Delete a subscription plan'
     )
     def delete(self, request, *args, **kwargs):
         return super().delete(request, *args, **kwargs)
@@ -103,12 +98,12 @@ class SubscriptionPlanDetailView(generics.RetrieveUpdateDestroyAPIView):
 class SubscriptionPlanViewSet(viewsets.ModelViewSet):
     queryset = SubscriptionPlan.objects.filter(is_active=True)
     serializer_class = SubscriptionPlanSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [IsAuthenticated()]
-        return [IsAdminUser()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         queryset = SubscriptionPlan.objects.all()
