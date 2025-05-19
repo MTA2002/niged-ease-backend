@@ -8,7 +8,7 @@ from companies.serializers import CompanySerializer
 
 class CheckSubscriptionView(GenericAPIView):
     serializer_class = CompanySerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @extend_schema(
         responses={

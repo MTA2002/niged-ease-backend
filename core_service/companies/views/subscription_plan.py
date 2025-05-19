@@ -12,7 +12,7 @@ from companies.serializers import SubscriptionPlanSerializer
 class SubscriptionPlanListView(generics.ListCreateAPIView):
     queryset = SubscriptionPlan.objects.filter(is_active=True)
     serializer_class = SubscriptionPlanSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @extend_schema(
         responses={
@@ -50,7 +50,7 @@ class SubscriptionPlanListView(generics.ListCreateAPIView):
 class SubscriptionPlanDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = SubscriptionPlan.objects.all()
     serializer_class = SubscriptionPlanSerializer
-    permission_classes = [IsAuthenticated,]
+    # permission_classes = [IsAuthenticated,]
 
     @extend_schema(
         responses={
@@ -103,7 +103,7 @@ class SubscriptionPlanDetailView(generics.RetrieveUpdateDestroyAPIView):
 class SubscriptionPlanViewSet(viewsets.ModelViewSet):
     queryset = SubscriptionPlan.objects.filter(is_active=True)
     serializer_class = SubscriptionPlanSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
