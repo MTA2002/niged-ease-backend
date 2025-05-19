@@ -3,12 +3,17 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
+from rest_framework.permissions import AllowAny
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from companies.models.store import Store
 from companies.serializers.store import StoreSerializer
 
 
 class StoreListView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    
     @extend_schema(
         description="Get a list of all stores",
         responses={200: StoreSerializer(many=True)}
@@ -35,6 +40,9 @@ class StoreListView(APIView):
 
 
 class StoreDetailView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    
     def get_store(self, id):
         try:
             store = Store.objects.get(pk=id)
