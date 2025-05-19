@@ -115,7 +115,7 @@ class UserServiceAuthentication(authentication.BaseAuthentication):
         except requests.exceptions.Timeout:
             logger.error("Request to User Service timed out")
             raise exceptions.AuthenticationFailed('Authentication service timeout - please try again')
-        except requests.exceptions.SSLError:
+        except requests.exceptions.SSLError: # type: ignore
             logger.error("SSL error when connecting to User Service")
             raise exceptions.AuthenticationFailed('SSL error when connecting to authentication service')
         except requests.RequestException as e:

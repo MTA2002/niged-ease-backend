@@ -30,8 +30,8 @@ urlpatterns = [
     path('currencies/<uuid:id>/', CurrencyDetailView.as_view(), name='currency-detail'),
     
     # Store URLs
-    path('stores/', StoreListView.as_view(), name='store-list'),
-    path('stores/<uuid:id>/', StoreDetailView.as_view(), name='store-detail'),
+    path('companies/<uuid:company_id>/stores/', StoreListView.as_view(), name='store-list'),
+    path('companies/<uuid:company_id>/stores/<uuid:id>/', StoreDetailView.as_view(), name='store-detail'),
 ] 
 
 
