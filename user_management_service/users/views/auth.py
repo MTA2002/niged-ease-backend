@@ -144,7 +144,7 @@ class VerifyOTPView(APIView):
             headers = {
                 'Authorization': f'Bearer {access_token}'
             }
-            response = requests.get(f'{core_service_url}/companies/stores/{user.assigned_store}/', headers=headers)
+            response = requests.get(f'{core_service_url}/companies/companies/{user.company_id}/stores/{user.assigned_store}/', headers=headers)
             if response.status_code != 200:
                 stores = None
             
@@ -154,13 +154,14 @@ class VerifyOTPView(APIView):
             headers = {
                 'Authorization': f'Bearer {access_token}'
             }
-            response = requests.get(f'{core_service_url}/companies/stores/', headers=headers)
+            response = requests.get(f'{core_service_url}/companies/companies/{user.company_id}/stores/', headers=headers)
             stores = response.json()
 
         return Response({
             'access': access_token,
             'refresh': str(refresh),
             'role' : user.role,
+            'company_id' : user.company_id if user.company_id else '',
             'stores' : stores
         }, status=status.HTTP_200_OK)
 
