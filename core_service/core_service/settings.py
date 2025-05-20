@@ -29,7 +29,7 @@ INSTALLED_APPS = [
     'core_auth',
     'drf_spectacular',
     'corsheaders',
-
+    'reports'
 ]
 
 MIDDLEWARE = [
