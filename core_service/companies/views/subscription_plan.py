@@ -45,6 +45,8 @@ class SubscriptionPlanListView(generics.ListCreateAPIView):
 class SubscriptionPlanDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = SubscriptionPlan.objects.all()
     serializer_class = SubscriptionPlanSerializer
+    lookup_field = "id"
+    lookup_url_kwarg = "id"
     # permission_classes = [IsAuthenticated,]
 
     @extend_schema(
