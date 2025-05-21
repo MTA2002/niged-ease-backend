@@ -28,7 +28,7 @@ class Command(BaseCommand):
                         'duration_in_months': duration,
                         'max_products': plan_data['features']['max_products'],
                         'max_stores': plan_data['features']['max_stores'],
-                        'max_users': plan_data['features']['max_users'],
+                        'max_customers': plan_data['features']['max_customers'],
                         'storage_limit_gb': plan_data['features']['storage_limit_gb']
                     }
                 )

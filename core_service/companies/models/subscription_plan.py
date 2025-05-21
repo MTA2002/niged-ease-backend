@@ -25,7 +25,7 @@ class SubscriptionPlan(models.Model):
     storage_limit_gb = models.IntegerField(default=5)
     max_products = models.PositiveIntegerField(default=0)
     max_stores = models.PositiveIntegerField(default=0)
-    max_users = models.PositiveIntegerField(default=0)
+    max_customers = models.PositiveIntegerField(default=0)
     duration_in_months = models.PositiveIntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -47,7 +47,7 @@ class SubscriptionPlan(models.Model):
                 'features': {
                     'max_products': 50,
                     'max_stores': 2,
-                    'max_users': 1,
+                    'max_customers': 1,
                     'storage_limit_gb': 5
                 }
             },
@@ -58,7 +58,7 @@ class SubscriptionPlan(models.Model):
                 'features': {
                     'max_products': 500,
                     'max_stores': 10,
-                    'max_users': 5,
+                    'max_customers': 5,
                     'storage_limit_gb': 20
                 }
             },
@@ -69,7 +69,7 @@ class SubscriptionPlan(models.Model):
                 'features': {
                     'max_products': 5000,
                     'max_stores': 50,
-                    'max_users': 20,
+                    'max_customers': 20,
                     'storage_limit_gb': 100
                 }
             }

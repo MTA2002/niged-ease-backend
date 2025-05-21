@@ -16,7 +16,7 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
             'storage_limit_gb',
             'max_products',
             'max_stores',
-            'max_users',
+            'max_customers',
             'created_at',
             'updated_at'
         ]
