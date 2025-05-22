@@ -37,7 +37,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
         model = Purchase
         fields = [
             'id', 'store_id', 'store', 
-            'supplier_id', 'supplier', 'total_amount', 
+            'supplier_id', 'supplier', 'total_amount', 'tax',
             'currency_id', 'currency', 'payment_mode_id', 'payment_mode',
             'is_credit', 'created_at', 'updated_at','items',
             'status'
@@ -47,7 +47,8 @@ class PurchaseSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'store_id': {'required': True},
             'supplier_id': {'required': True},
-            'total_amount': {'required': True}
+            'total_amount': {'required': True},
+            'tax': {'required': False}
         }
     
     def validate(self, data):
@@ -58,6 +59,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
         store_id = data.get('store_id')
         supplier_id = data.get('supplier_id')
         given_amount = data.get('total_amount')
+        tax_rate = data.get('tax', 0)
         actual_amount = 0
 
         # Validate that the total amount is a positive number
@@ -94,9 +96,13 @@ class PurchaseSerializer(serializers.ModelSerializer):
             if product and quantity:
                 actual_amount += product.purchase_price * quantity
         
+        # Apply tax to the actual amount
+        actual_amount_with_tax = actual_amount + (actual_amount * tax_rate)
+        
         print("Actual Amount:", actual_amount)
+        print("Actual Amount with Tax:", actual_amount_with_tax)
         print("Given Amount:", given_amount)
-        if given_amount > actual_amount:
+        if given_amount > actual_amount_with_tax:
             raise serializers.ValidationError("Given amount exceeds the actual amount.")
 
         if given_amount < 0:
@@ -111,6 +117,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
         currency_id = validated_data.pop('currency_id', None)
         payment_mode_id = validated_data.pop('payment_mode_id', None)
         total_amount = validated_data.get('total_amount')
+        tax_rate = validated_data.get('tax', 0)
         actual_amount = 0
 
         for item in items_data:
@@ -121,7 +128,11 @@ class PurchaseSerializer(serializers.ModelSerializer):
             if product and quantity:
                 actual_amount += product.purchase_price * quantity
         
+        # Apply tax to the actual amount
+        actual_amount_with_tax = actual_amount + (actual_amount * tax_rate)
+        
         print('actual_amount', actual_amount)
+        print('actual_amount_with_tax', actual_amount_with_tax)
         print('total_amount', total_amount)
         try:
             store = Store.objects.get(id=store_id)
@@ -129,7 +140,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
             
             if total_amount <= 0:
                 status = Purchase.PurchaseStatus.UNPAID
-            elif total_amount < actual_amount:
+            elif total_amount < actual_amount_with_tax:
                 status = Purchase.PurchaseStatus.PARTIALLY_PAID
             else:
                 status = Purchase.PurchaseStatus.PAID
@@ -176,7 +187,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
             
             # Create payable if not fully paid
             if status in [Purchase.PurchaseStatus.UNPAID, Purchase.PurchaseStatus.PARTIALLY_PAID]:
-                payable_amount = actual_amount - total_amount
+                payable_amount = actual_amount_with_tax - total_amount
                 Payable.objects.create(
                     store_id=store,
                     purchase=purchase,
@@ -196,6 +207,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items', [])
         actual_amount = 0
         total_amount = validated_data.get('total_amount', instance.total_amount)
+        tax_rate = validated_data.get('tax', instance.tax)
 
         # Calculate actual amount from items
         for item in items_data:
@@ -205,11 +217,14 @@ class PurchaseSerializer(serializers.ModelSerializer):
 
             if product and quantity:
                 actual_amount += product.purchase_price * quantity
+        
+        # Apply tax to the actual amount
+        actual_amount_with_tax = actual_amount + (actual_amount * tax_rate)
 
         # Determine purchase status based on amount
         if total_amount <= 0:
             status = Purchase.PurchaseStatus.UNPAID
-        elif total_amount < actual_amount:
+        elif total_amount < actual_amount_with_tax:
             status = Purchase.PurchaseStatus.PARTIALLY_PAID
         else:
             status = Purchase.PurchaseStatus.PAID
@@ -265,13 +280,13 @@ class PurchaseSerializer(serializers.ModelSerializer):
                 payable.delete()
             else:
                 # Update payable amount
-                payable_amount = actual_amount - total_amount
+                payable_amount = actual_amount_with_tax - total_amount
                 payable.amount = payable_amount
                 payable.save()
         except Payable.DoesNotExist:
             # Create new payable if not fully paid
             if status in [Purchase.PurchaseStatus.UNPAID, Purchase.PurchaseStatus.PARTIALLY_PAID]:
-                payable_amount = actual_amount - total_amount
+                payable_amount = actual_amount_with_tax - total_amount
                 Payable.objects.create(
                     store_id=instance.store,
                     purchase=instance,

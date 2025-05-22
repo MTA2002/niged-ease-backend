@@ -8,6 +8,7 @@ from inventory.views import (
     ProductUnitDetailView
 )
 from inventory.views.inventory import InventoryListView, InventoryDetailView
+from inventory.views.product_search import ProductSearchView
 
 urlpatterns = [
     # Product URLs
@@ -25,4 +26,7 @@ urlpatterns = [
     # Inventory URLs
     path('stores/<uuid:store_id>/inventories/', InventoryListView.as_view(), name='inventory-list'),
     path('stores/<uuid:store_id>/inventories/<uuid:id>/', InventoryDetailView.as_view(), name='inventory-detail'),
+
+    # Product Search URL
+    path('stores/<uuid:store_id>/product-search/', ProductSearchView.as_view(), name='product-search'),
 ] 

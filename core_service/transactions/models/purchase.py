@@ -13,6 +13,7 @@ class Purchase(models.Model):
   store_id = models.ForeignKey('companies.Store', on_delete=models.CASCADE)
   supplier = models.ForeignKey('transactions.Supplier', on_delete=models.PROTECT)
   total_amount = models.DecimalField(max_digits=19, decimal_places=4)
+  tax = models.DecimalField(max_digits=19, decimal_places=4, default=Decimal('0.00'))
   currency = models.ForeignKey('companies.Currency', on_delete=models.SET_NULL, null=True)
   payment_mode = models.ForeignKey('transactions.PaymentMode', on_delete=models.SET_NULL, null=True)
   status = models.CharField(max_length=15, choices=PurchaseStatus.choices, default=PurchaseStatus.UNPAID)

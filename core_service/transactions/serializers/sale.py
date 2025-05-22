@@ -36,7 +36,7 @@ class SaleSerializer(serializers.ModelSerializer):
         model = Sale
         fields = [
             'id', 'store_id', 'store', 
-            'customer_id', 'customer', 'total_amount', 
+            'customer_id', 'customer', 'total_amount', 'tax',
             'currency_id', 'currency', 'payment_mode_id', 'payment_mode',
             'is_credit', 'created_at', 'updated_at', 'status',
             'items'
@@ -45,7 +45,7 @@ class SaleSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'store_id': {'required': True},
             'customer_id': {'required': True},
-            
+            'tax': {'required': False}
         }
 
     def validate(self, attrs):
@@ -56,6 +56,7 @@ class SaleSerializer(serializers.ModelSerializer):
         store_id = attrs.get('store_id')
         customer_id = attrs.get('customer_id')
         given_amount = attrs.get('total_amount')
+        tax_rate = attrs.get('tax', 0)
         actual_amount = 0
 
         # Validate that the total amount is a positive number
@@ -99,8 +100,13 @@ class SaleSerializer(serializers.ModelSerializer):
             if product and quantity:
                 actual_amount += product.sale_price * quantity
         
+        # Apply tax to the actual amount
+        actual_amount_with_tax = actual_amount + (actual_amount * tax_rate)
+        
         print("Actual Amount:", actual_amount)
-        if given_amount > actual_amount:
+        print("Actual Amount with Tax:", actual_amount_with_tax)
+        print("Given Amount:", given_amount)
+        if given_amount > actual_amount_with_tax:
             raise serializers.ValidationError("Given amount exceeds the actual amount.")
         
         if given_amount < 0:
@@ -121,6 +127,7 @@ class SaleSerializer(serializers.ModelSerializer):
         currency_id = validated_data.pop('currency_id', None)
         payment_mode_id = validated_data.pop('payment_mode_id', None)
         total_amount = validated_data.get('total_amount')
+        tax_rate = validated_data.get('tax', 0)
         
         actual_amount = 0
         print('items_data', items_data)
@@ -133,6 +140,9 @@ class SaleSerializer(serializers.ModelSerializer):
 
             if product and quantity:
                 actual_amount += product.sale_price * quantity
+        
+        # Apply tax to the actual amount
+        actual_amount_with_tax = actual_amount + (actual_amount * tax_rate)
 
         try:
             # Fetch related objects
@@ -142,7 +152,7 @@ class SaleSerializer(serializers.ModelSerializer):
             # Determine sale status based on amount received
             if total_amount <= 0:
                 status = Sale.SaleStatus.UNPAID
-            elif total_amount < actual_amount:
+            elif total_amount < actual_amount_with_tax:
                 status = Sale.SaleStatus.PARTIALLY_PAID
             else:
                 status = Sale.SaleStatus.PAID
@@ -183,7 +193,7 @@ class SaleSerializer(serializers.ModelSerializer):
             
             # Create receivable if not fully paid
             if status in [Sale.SaleStatus.UNPAID, Sale.SaleStatus.PARTIALLY_PAID]:
-                receivable_amount = actual_amount - total_amount
+                receivable_amount = actual_amount_with_tax - total_amount
                 Receivable.objects.create(
                     store_id=store,
                     sale=sale,
@@ -204,6 +214,7 @@ class SaleSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items', [])
         actual_amount = 0
         total_amount = validated_data.get('total_amount', instance.total_amount)
+        tax_rate = validated_data.get('tax', instance.tax)
 
         # Calculate actual amount from items
         for item in items_data:
@@ -213,11 +224,14 @@ class SaleSerializer(serializers.ModelSerializer):
 
             if product and quantity:
                 actual_amount += product.sale_price * quantity
+        
+        # Apply tax to the actual amount
+        actual_amount_with_tax = actual_amount + (actual_amount * tax_rate)
 
         # Determine sale status based on amount
         if total_amount <= 0:
             status = Sale.SaleStatus.UNPAID
-        elif total_amount < actual_amount:
+        elif total_amount < actual_amount_with_tax:
             status = Sale.SaleStatus.PARTIALLY_PAID
         else:
             status = Sale.SaleStatus.PAID
@@ -270,13 +284,13 @@ class SaleSerializer(serializers.ModelSerializer):
                 receivable.delete()
             else:
                 # Update receivable amount
-                receivable_amount = actual_amount - total_amount
+                receivable_amount = actual_amount_with_tax - total_amount
                 receivable.amount = receivable_amount
                 receivable.save()
         except Receivable.DoesNotExist:
             # Create new receivable if not fully paid
             if status in [Sale.SaleStatus.UNPAID, Sale.SaleStatus.PARTIALLY_PAID]:
-                receivable_amount = actual_amount - total_amount
+                receivable_amount = actual_amount_with_tax - total_amount
                 Receivable.objects.create(
                     store_id=instance.store,
                     sale=instance,
