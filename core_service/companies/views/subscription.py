@@ -49,7 +49,7 @@ class CheckSubscriptionView(GenericAPIView):
                     'name': subscription_plan.name,
                     'max_products': subscription_plan.max_products,
                     'max_stores': subscription_plan.max_stores,
-                    'max_users': subscription_plan.max_users,
+                    'max_customers': subscription_plan.max_customers,
                     'duration_in_months': subscription_plan.duration_in_months
                 } if subscription_plan else None
             }

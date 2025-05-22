@@ -1,15 +1,17 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-import dj_database_url
+import dj_database_url # type:ignore
 
+# Load environment variables from .env file
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', default='-asdf&*YJHKP908yuik')
-DEBUG = os.getenv('DEBUG', default=True)
-print("USER_SERVICE_URL loaded:", os.getenv('USER_SERVICE_URL'))
+DEBUG = os.getenv('DEBUG', default='True').lower() == 'true'
+USER_SERVICE_URL = os.getenv('USER_SERVICE_URL')
+print("USER_SERVICE_URL loaded:", USER_SERVICE_URL)
 
 ALLOWED_HOSTS = ['*']
 
