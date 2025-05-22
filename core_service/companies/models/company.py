@@ -9,7 +9,7 @@ class Company(models.Model):
 
   id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
   address = models.CharField(max_length=255,default='')
-  name = models.CharField(max_length=100)
+  name = models.CharField(max_length=100, unique=True)
   description = models.TextField(blank=True)
   is_active = models.BooleanField(default=True)
   is_subscribed = models.BooleanField(default=False)  # Ensure this is not null
@@ -24,7 +24,7 @@ class Company(models.Model):
   )
   subscription_start_date = models.DateTimeField(null=True, blank=True)
   subscription_expiration_date = models.DateTimeField(null=True, blank=True)
-  
+  company_profile_image = models.URLField(max_length=255, default='', null=True, blank=True)
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
 

@@ -10,7 +10,6 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.permissions import AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
-
 from transactions.models.sale import Sale
 from transactions.models.sale_item import SaleItem
 from transactions.models.purchase import Purchase
@@ -21,26 +20,26 @@ from inventory.models.inventory import Inventory
 from financials.models.expense import Expense
 from financials.models.payment_in import PaymentIn
 from financials.models.payment_out import PaymentOut
-from reports.models import (
-    Report, 
-    SalesReport, 
-    InventoryReport, 
-    FinancialReport, 
-    CustomerReport, 
-    ProductPerformanceReport,
-    ProfitReport,
-    RevenueReport
-)
-from reports.serializers import (
-    ReportSerializer,
-    SalesReportSerializer,
-    InventoryReportSerializer,
-    FinancialReportSerializer,
-    CustomerReportSerializer,
-    ProductPerformanceReportSerializer,
-    ProfitReportSerializer,
-    RevenueReportSerializer
-)
+# from reports.models import (
+#     Report, 
+#     SalesReport, 
+#     InventoryReport, 
+#     FinancialReport, 
+#     CustomerReport, 
+#     ProductPerformanceReport,
+#     ProfitReport,
+#     RevenueReport
+# )
+# from reports.serializers import (
+#     ReportSerializer,
+#     SalesReportSerializer,
+#     InventoryReportSerializer,
+#     FinancialReportSerializer,
+#     CustomerReportSerializer,
+#     ProductPerformanceReportSerializer,
+#     ProfitReportSerializer,
+#     RevenueReportSerializer
+# )
 
 
 class ReportListView(APIView):
@@ -123,8 +122,7 @@ class GenerateSalesReportView(APIView):
             OpenApiParameter(name='store_id', type=str, location=OpenApiParameter.PATH),
             OpenApiParameter(name='start_date', type=str, location=OpenApiParameter.QUERY),
             OpenApiParameter(name='end_date', type=str, location=OpenApiParameter.QUERY)
-        ],
-        responses={200: SalesReportSerializer}
+        ]
     )
     def get(self, request: Request, store_id):
         try:
@@ -231,8 +229,7 @@ class GenerateInventoryReportView(APIView):
         description="Generate an inventory report for a store",
         parameters=[
             OpenApiParameter(name='store_id', type=str, location=OpenApiParameter.PATH)
-        ],
-        responses={200: InventoryReportSerializer}
+        ]
     )
     def get(self, request: Request, store_id):
         try:
@@ -344,8 +341,7 @@ class GenerateFinancialReportView(APIView):
             OpenApiParameter(name='store_id', type=str, location=OpenApiParameter.PATH),
             OpenApiParameter(name='start_date', type=str, location=OpenApiParameter.QUERY),
             OpenApiParameter(name='end_date', type=str, location=OpenApiParameter.QUERY)
-        ],
-        responses={200: FinancialReportSerializer}
+        ]
     )
     def get(self, request: Request, store_id):
         try:
@@ -457,8 +453,7 @@ class GenerateCustomerReportView(APIView):
             OpenApiParameter(name='store_id', type=str, location=OpenApiParameter.PATH),
             OpenApiParameter(name='start_date', type=str, location=OpenApiParameter.QUERY),
             OpenApiParameter(name='end_date', type=str, location=OpenApiParameter.QUERY)
-        ],
-        responses={200: CustomerReportSerializer}
+        ]
     )
     def get(self, request: Request, store_id):
         try:
@@ -485,6 +480,7 @@ class GenerateCustomerReportView(APIView):
         
         # Get unique customers from the sales
         customers = sales.values('customer').distinct()
+        print(customers)
         total_customers = customers.count()
         
         # Previous period for comparison (same length)
@@ -562,8 +558,7 @@ class GenerateProductPerformanceReportView(APIView):
             OpenApiParameter(name='store_id', type=str, location=OpenApiParameter.PATH),
             OpenApiParameter(name='start_date', type=str, location=OpenApiParameter.QUERY),
             OpenApiParameter(name='end_date', type=str, location=OpenApiParameter.QUERY)
-        ],
-        responses={200: ProductPerformanceReportSerializer}
+        ]
     )
     def get(self, request: Request, store_id):
         try:
@@ -702,8 +697,7 @@ class GenerateProfitReportView(APIView):
             OpenApiParameter(name='store_id', type=str, location=OpenApiParameter.PATH),
             OpenApiParameter(name='start_date', type=str, location=OpenApiParameter.QUERY),
             OpenApiParameter(name='end_date', type=str, location=OpenApiParameter.QUERY)
-        ],
-        responses={200: ProfitReportSerializer}
+        ]
     )
     def get(self, request: Request, store_id):
         try:
@@ -844,8 +838,7 @@ class GenerateRevenueReportView(APIView):
             OpenApiParameter(name='store_id', type=str, location=OpenApiParameter.PATH),
             OpenApiParameter(name='start_date', type=str, location=OpenApiParameter.QUERY),
             OpenApiParameter(name='end_date', type=str, location=OpenApiParameter.QUERY)
-        ],
-        responses={200: RevenueReportSerializer}
+        ]
     )
     def get(self, request: Request, store_id):
         try:
