@@ -6,9 +6,12 @@ from rest_framework import status
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from users.models.user import User
 from users.serializers.user import UserSerializer
-
+from rest_framework.permissions import AllowAny
 
 class UserListView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
     @extend_schema(
         summary="List users",
         description="Get a list of all users",
