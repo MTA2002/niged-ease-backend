@@ -31,7 +31,8 @@ INSTALLED_APPS = [
     'core_auth',
     'drf_spectacular',
     'corsheaders',
-    'reports'
+    'reports',
+    'predictions',
 ]
 
 MIDDLEWARE = [
