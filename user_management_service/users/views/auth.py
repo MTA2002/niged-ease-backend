@@ -185,12 +185,12 @@ def create_otp_email_html(otp: str, user_name: str) -> str:
             </div>
             
             <div class="support">
-                Need help? Contact our support team at <a href="mailto:support@ngedease.com">support@ngedease.com</a>
+                Need help? Contact our support team at <a href="mailto:mahfouzteyib57@gmail.com">mahfouzteyib57@gmail.com</a>
             </div>
             
             <div class="footer">
                 <p>This is an automated message from NgedEase. Please do not reply to this email.</p>
-                <p>&copy; 2024 NgedEase. All rights reserved.</p>
+                <p>&copy; 2025 NgedEase. All rights reserved.</p>
             </div>
         </div>
     </body>
