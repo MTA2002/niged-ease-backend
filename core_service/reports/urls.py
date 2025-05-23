@@ -7,13 +7,13 @@ from reports.views import (
     GenerateCustomerReportView,
     GenerateProductPerformanceReportView,
     GenerateProfitReportView,
-    GenerateRevenueReportView
+    GenerateRevenueReportView,
+    GeneratePurchaseReportView
 )
 
 urlpatterns = [
     # List all reports for a store
     path('stores/<uuid:store_id>/reports/', ReportListView.as_view(), name='report-list'),
-    
     # Generate different types of reports
     path('stores/<uuid:store_id>/reports/sales/', GenerateSalesReportView.as_view(), name='generate-sales-report'),
     path('stores/<uuid:store_id>/reports/inventory/', GenerateInventoryReportView.as_view(), name='generate-inventory-report'),
@@ -22,4 +22,5 @@ urlpatterns = [
     path('stores/<uuid:store_id>/reports/products/', GenerateProductPerformanceReportView.as_view(), name='generate-product-report'),
     path('stores/<uuid:store_id>/reports/profit/', GenerateProfitReportView.as_view(), name='generate-profit-report'),
     path('stores/<uuid:store_id>/reports/revenue/', GenerateRevenueReportView.as_view(), name='generate-revenue-report'),
+    path('stores/<uuid:store_id>/reports/purchases/', GeneratePurchaseReportView.as_view(), name='generate-purchase-report'),
 ] 

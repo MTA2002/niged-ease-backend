@@ -28,5 +28,5 @@ urlpatterns = [
     path('stores/<uuid:store_id>/inventories/<uuid:id>/', InventoryDetailView.as_view(), name='inventory-detail'),
 
     # Product Search URL
-    path('stores/<uuid:store_id>/product-search/', ProductSearchView.as_view(), name='product-search'),
+    path('companies/<uuid:company_id>/product-search/<str:search_term>/', ProductSearchView.as_view(), name='product-search-with-term'),
 ] 
