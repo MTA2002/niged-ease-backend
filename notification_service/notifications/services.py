@@ -65,13 +65,9 @@ class NotificationService:
         """Send low stock email notification"""
         try:
             # Get or create email template
-            template = NotificationTemplate.objects.filter(
-                type='low_stock', 
-                is_active=True
-            ).first()
             
-            if not template:
-                template = self.create_default_low_stock_template()
+            
+            template = self.create_default_low_stock_template()
             
             # Prepare template context
             context = Context({
