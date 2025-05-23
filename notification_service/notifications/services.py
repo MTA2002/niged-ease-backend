@@ -133,62 +133,321 @@ class NotificationService:
         template = NotificationTemplate.objects.create(
             name="Default Low Stock Alert",
             type="low_stock",
-            subject="🚨 Low Stock Alert: {{ product_name }}",
+            subject="🚨 Low Stock Alert: {{ product_name }} - {{ store_name }}",
             html_body="""
-            <html>
-            <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px;">
-                    <h2 style="color: #d32f2f; margin-top: 0;">🚨 Low Stock Alert</h2>
-                    <p>Dear Team,</p>
-                    <p>The following product is running low on stock and needs immediate attention:</p>
-                    
-                    <div style="background-color: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr>
-                                <td style="padding: 8px 0; font-weight: bold; color: #495057;">Product:</td>
-                                <td style="padding: 8px 0; color: #212529;">{{ product_name }}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 8px 0; font-weight: bold; color: #495057;">Store:</td>
-                                <td style="padding: 8px 0; color: #212529;">{{ store_name }}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 8px 0; font-weight: bold; color: #495057;">Current Quantity:</td>
-                                <td style="padding: 8px 0; color: #d32f2f; font-weight: bold;">{{ current_quantity }}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 8px 0; font-weight: bold; color: #495057;">Alert Threshold:</td>
-                                <td style="padding: 8px 0; color: #495057;">{{ threshold }}</td>
-                            </tr>
-                        </table>
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Low Stock Alert</title>
+                <style>
+                    body {
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        line-height: 1.6;
+                        color: #333;
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        background-color: #f4f4f4;
+                    }
+                    .email-container {
+                        background-color: #ffffff;
+                        border-radius: 10px;
+                        padding: 40px;
+                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                        border-top: 4px solid #f44336;
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 30px;
+                    }
+                    .logo {
+                        font-size: 28px;
+                        font-weight: bold;
+                        color: #f44336;
+                        margin-bottom: 10px;
+                    }
+                    .title {
+                        font-size: 24px;
+                        color: #2c3e50;
+                        margin-bottom: 20px;
+                    }
+                    .alert-badge {
+                        background: linear-gradient(135deg, #ff5722 0%, #f44336 100%);
+                        color: white;
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        font-size: 14px;
+                        font-weight: bold;
+                        display: inline-block;
+                        margin-bottom: 20px;
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
+                    }
+                    .greeting {
+                        font-size: 16px;
+                        color: #555;
+                        margin-bottom: 25px;
+                    }
+                    .product-info {
+                        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+                        border-radius: 10px;
+                        padding: 30px;
+                        margin: 30px 0;
+                        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.2);
+                        color: white;
+                    }
+                    .product-name {
+                        font-size: 24px;
+                        font-weight: bold;
+                        margin-bottom: 20px;
+                        text-align: center;
+                        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+                    }
+                    .info-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 20px;
+                        margin-top: 20px;
+                    }
+                    .info-item {
+                        background-color: rgba(255, 255, 255, 0.1);
+                        padding: 15px;
+                        border-radius: 8px;
+                        text-align: center;
+                        backdrop-filter: blur(10px);
+                    }
+                    .info-label {
+                        font-size: 12px;
+                        opacity: 0.9;
+                        margin-bottom: 5px;
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
+                    }
+                    .info-value {
+                        font-size: 20px;
+                        font-weight: bold;
+                    }
+                    .quantity-critical {
+                        font-size: 28px !important;
+                        color: #ffeb3b;
+                        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+                    }
+                    .action-section {
+                        background-color: #fff3e0;
+                        border-left: 4px solid #ff9800;
+                        padding: 20px;
+                        margin: 25px 0;
+                        border-radius: 5px;
+                    }
+                    .action-title {
+                        color: #e65100;
+                        margin-top: 0;
+                        font-size: 18px;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                    }
+                    .action-list {
+                        margin: 15px 0;
+                        padding-left: 20px;
+                    }
+                    .action-list li {
+                        margin: 10px 0;
+                        color: #bf360c;
+                        font-weight: 500;
+                    }
+                    .urgency-meter {
+                        background-color: #ffebee;
+                        border-radius: 10px;
+                        padding: 20px;
+                        margin: 20px 0;
+                        text-align: center;
+                        border: 2px solid #ffcdd2;
+                    }
+                    .urgency-title {
+                        color: #c62828;
+                        font-size: 16px;
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                    }
+                    .urgency-bar {
+                        width: 100%;
+                        height: 10px;
+                        background-color: #ffcdd2;
+                        border-radius: 5px;
+                        overflow: hidden;
+                        margin: 10px 0;
+                    }
+                    .urgency-fill {
+                        height: 100%;
+                        background: linear-gradient(90deg, #ff5722, #f44336);
+                        width: 85%;
+                        border-radius: 5px;
+                    }
+                    .footer {
+                        text-align: center;
+                        margin-top: 40px;
+                        padding-top: 20px;
+                        border-top: 1px solid #eee;
+                        color: #777;
+                        font-size: 14px;
+                    }
+                    .support {
+                        background-color: #e8f5e8;
+                        border-radius: 5px;
+                        padding: 15px;
+                        margin: 20px 0;
+                        text-align: center;
+                    }
+                    .support a {
+                        color: #4CAF50;
+                        text-decoration: none;
+                    }
+                    .contact-info {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 20px;
+                        border-radius: 8px;
+                        margin: 20px 0;
+                        text-align: center;
+                    }
+                    .contact-title {
+                        font-size: 16px;
+                        margin-bottom: 10px;
+                        opacity: 0.9;
+                    }
+                    .contact-details {
+                        font-weight: bold;
+                    }
+                    @media (max-width: 600px) {
+                        .email-container {
+                            padding: 20px;
+                        }
+                        .info-grid {
+                            grid-template-columns: 1fr;
+                            gap: 10px;
+                        }
+                        .product-name {
+                            font-size: 20px;
+                        }
+                        .info-value {
+                            font-size: 18px;
+                        }
+                        .quantity-critical {
+                            font-size: 24px !important;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="email-container">
+                    <div class="header">
+                        <div class="logo">📦 NgedEase</div>
+                        <div class="alert-badge">🚨 Stock Alert</div>
+                        <h1 class="title">Low Inventory Warning</h1>
                     </div>
                     
-                    <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                        <p style="margin: 0; color: #1976d2;"><strong>Action Required:</strong> Please restock this item as soon as possible to avoid stockouts and potential sales loss.</p>
+                    <div class="greeting">
+                        Dear Inventory Team,
                     </div>
                     
-                    <p style="margin-top: 30px;">Best regards,<br>
-                    <strong>NgEdease Inventory Management System</strong></p>
+                    <p>We've detected that one of your products has reached a critically low stock level and requires immediate attention to prevent stockouts.</p>
+                    
+                    <div class="product-info">
+                        <div class="product-name">{{ product_name }}</div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">Store Location</div>
+                                <div class="info-value">{{ store_name }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Alert Threshold</div>
+                                <div class="info-value">{{ threshold }}</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px; text-align: center;">
+                            <div class="info-label">Current Stock Level</div>
+                            <div class="info-value quantity-critical">{{ current_quantity }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="urgency-meter">
+                        <div class="urgency-title">⏰ Urgency Level: HIGH</div>
+                        <div class="urgency-bar">
+                            <div class="urgency-fill"></div>
+                        </div>
+                        <div style="font-size: 14px; color: #c62828; margin-top: 5px;">
+                            Stock level is 85% below recommended threshold
+                        </div>
+                    </div>
+                    
+                    <div class="action-section">
+                        <h3 class="action-title">
+                            <span>🎯</span>
+                            <span>Immediate Actions Required</span>
+                        </h3>
+                        <ul class="action-list">
+                            <li>Review current supplier availability and lead times</li>
+                            <li>Place urgent restock order to prevent stockouts</li>
+                            <li>Consider temporary product substitutions if available</li>
+                            <li>Notify sales team of potential inventory constraints</li>
+                            <li>Update customers about potential delivery delays</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="contact-info">
+                        <div class="contact-title">Need assistance with restocking?</div>
+                        <div class="contact-details">
+                            📞 Contact Supply Chain: +251-929-146-352<br>
+                            📧 Email: mahfouzteyib57@gmail.com
+                        </div>
+                    </div>
+                    
+                    <div class="support">
+                        For technical support or system issues, contact us at 
+                        <a href="mailto:mahfouzteyib57@gmail.com">mahfouzteyib57@gmail.com</a>
+                    </div>
+                    
+                    <div class="footer">
+                        <p><strong>NgedEase Inventory Management System</strong></p>
+                        <p>This is an automated alert. Please take immediate action to prevent stockouts.</p>
+                        <p>&copy; 2024 NgedEase. All rights reserved.</p>
+                    </div>
                 </div>
             </body>
             </html>
             """,
             text_body="""
-🚨 LOW STOCK ALERT
+🚨 LOW STOCK ALERT - URGENT ACTION REQUIRED
 
-Dear Team,
+Dear Inventory Team,
 
-The following product is running low on stock:
+CRITICAL STOCK LEVEL DETECTED
+=================================
 
 Product: {{ product_name }}
 Store: {{ store_name }}
 Current Quantity: {{ current_quantity }}
 Alert Threshold: {{ threshold }}
 
-ACTION REQUIRED: Please restock this item as soon as possible to avoid stockouts.
+⏰ URGENCY LEVEL: HIGH
+Stock level is critically low and requires immediate attention.
 
-Best regards,
-NgEdease Inventory Management System
+🎯 IMMEDIATE ACTIONS REQUIRED:
+• Review current supplier availability and lead times
+• Place urgent restock order to prevent stockouts
+• Consider temporary product substitutions if available
+• Notify sales team of potential inventory constraints
+
+
+For technical support: mahfouzteyib57@gmail.com
+
+This is an automated alert from NgedEase Inventory Management System.
+Please take immediate action to prevent stockouts.
+
+© 2025 NgedEase. All rights reserved.
             """
         )
         return template
