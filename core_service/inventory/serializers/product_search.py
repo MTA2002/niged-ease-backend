@@ -21,17 +21,17 @@ class ProductSearchResultSerializer(serializers.ModelSerializer):
         ]
     
     def get_inventory(self, obj):
-        """Get inventory details for this product across all stores"""
+        """Get inventory details for this product across all stores with positive inventory"""
         # Only include positive inventory counts
         inventories = Inventory.objects.filter(
             product=obj,
             quantity__gt=0
-        )
+        ).select_related('store')
         
         inventory_data = []
         for inv in inventories:
             inventory_data.append({
-                'store_id': inv.store.id,
+                'store_id': str(inv.store.id),
                 'store_name': inv.store.name,
                 'store_location': inv.store.location,
                 'quantity': inv.quantity

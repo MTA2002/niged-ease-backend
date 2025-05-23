@@ -4,12 +4,14 @@ from rest_framework.permissions import AllowAny
 from django.db.models import Q, Prefetch, F
 from inventory.models.product import Product
 from inventory.models.inventory import Inventory
+from companies.models.store import Store
 from inventory.serializers.product_search import ProductSearchResultSerializer
 
 class ProductSearchView(generics.ListAPIView):
     """
-    View for searching products and showing their storage locations
-    and inventory levels (only showing positive inventory counts).
+    View for searching products across all stores within a company
+    and showing their storage locations and inventory levels 
+    (only showing positive inventory counts).
     """
     serializer_class = ProductSearchResultSerializer
     permission_classes = [AllowAny]
@@ -17,14 +19,21 @@ class ProductSearchView(generics.ListAPIView):
     
     def get_queryset(self):
         """
-        Return products based on search criteria and filter
-        to include only those with positive inventory.
+        Return products based on search criteria across all stores in a company
+        and filter to include only those with positive inventory.
         """
-        store_id = self.kwargs.get('store_id')
-        search_term = self.request.GET.get('search', '')
+        company_id = self.kwargs.get('company_id')
         
-        # Start with base queryset filtered by store
-        queryset = Product.objects.filter(store_id=store_id)
+        # Get search term from URL path if available, otherwise from query parameters
+        search_term = self.kwargs.get('search_term', '')
+        if not search_term:
+            search_term = self.request.GET.get('search', '')
+        
+        # Get all stores for this company
+        store_ids = Store.objects.filter(company_id=company_id).values_list('id', flat=True)
+        
+        # Start with base queryset filtered by stores in this company
+        queryset = Product.objects.filter(store_id__in=store_ids)
         
         # Apply search filtering if a search term is provided
         if search_term:
@@ -34,11 +43,11 @@ class ProductSearchView(generics.ListAPIView):
             )
         
         # We'll only include products that have positive inventory
-        # Create a subquery to get products with positive inventory
+        # Join with inventory to filter products with positive inventory
         products_with_inventory = Inventory.objects.filter(
-            product=F('id'),
+            product__in=queryset,
             quantity__gt=0
-        ).values('product')
+        ).values_list('product_id', flat=True)
         
         # Filter to only include products with positive inventory
         queryset = queryset.filter(id__in=products_with_inventory)
