@@ -12,3 +12,4 @@ class ProductCategory(models.Model):
 
   class Meta:
     db_table = 'product_categories'
+    unique_together = ['store_id', 'name']

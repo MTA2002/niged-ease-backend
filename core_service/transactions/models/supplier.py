@@ -7,7 +7,7 @@ class Supplier(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     store_id = models.ForeignKey('companies.Store', on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
-    email = models.EmailField(null=True, blank=True, unique=True)
+    email = models.EmailField(null=True, blank=True)
     phone = models.CharField(max_length=20, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
     credit_limit = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
@@ -17,7 +17,7 @@ class Supplier(models.Model):
 
     class Meta:
         db_table = 'suppliers'
-        
+        unique_together = ['store_id', 'email']
 
     def __str__(self):
         return f"{self.name} ({self.email})" 

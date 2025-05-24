@@ -12,3 +12,4 @@ class ProductUnit(models.Model):
 
   class Meta:
     db_table = 'product_units'
+    unique_together = ['store_id', 'name']
