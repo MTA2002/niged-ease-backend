@@ -5,7 +5,7 @@ class Store(models.Model):
 
   id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
   company_id = models.ForeignKey('companies.Company', on_delete=models.CASCADE)
-  name = models.CharField(max_length=30)
+  name = models.CharField(max_length=30, unique=True)
   is_active = models.CharField(max_length=20, choices=[
         ('active', 'Active'),
         ('inactive', 'Inactive'),
