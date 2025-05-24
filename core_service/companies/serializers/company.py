@@ -13,6 +13,7 @@ class CompanySerializer(serializers.ModelSerializer):
             'is_active',
             'is_subscribed',
             'subscription_plan',
+            'currency',
             'created_at',
             'updated_at'
         ]
