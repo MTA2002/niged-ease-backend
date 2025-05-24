@@ -2,6 +2,7 @@ import uuid
 from django.db import models
 from django.utils import timezone
 from datetime import timedelta
+from companies.models.currency import Currency
 from .subscription_plan import SubscriptionPlan
 
 
@@ -12,6 +13,13 @@ class Company(models.Model):
   name = models.CharField(max_length=100, unique=True)
   description = models.TextField(blank=True)
   is_active = models.BooleanField(default=True)
+  currency = models.ForeignKey(
+    Currency,
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,
+    related_name='companies'
+  )
   is_subscribed = models.BooleanField(default=False)  # Ensure this is not null
   
   # Subscription fields
