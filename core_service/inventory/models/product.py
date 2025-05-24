@@ -9,7 +9,7 @@ class Product(models.Model):
   store_id = models.ForeignKey('companies.Store', on_delete=models.CASCADE)
   color_id = models.ForeignKey('clothings.Color', on_delete=models.CASCADE)
   collection_id = models.ForeignKey('clothings.Collection', on_delete=models.CASCADE)
-  name = models.CharField(max_length=30, unique=True)
+  name = models.CharField(max_length=30)
   description = models.TextField(null=True)
   image = models.URLField(null=True)
   product_unit = models.ForeignKey('inventory.ProductUnit', on_delete=models.PROTECT)
@@ -21,6 +21,7 @@ class Product(models.Model):
 
   class Meta:
     db_table = 'products'
+    unique_together = ['store_id', 'name']
 
  
     
