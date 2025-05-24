@@ -9,6 +9,7 @@ from inventory.views import (
 )
 from inventory.views.inventory import InventoryListView, InventoryDetailView
 from inventory.views.product_search import ProductSearchView
+from inventory.views.stock_transfer import StockTransferListView, StockTransferDetailView
 
 urlpatterns = [
     # Product URLs
@@ -26,6 +27,10 @@ urlpatterns = [
     # Inventory URLs
     path('stores/<uuid:store_id>/inventories/', InventoryListView.as_view(), name='inventory-list'),
     path('stores/<uuid:store_id>/inventories/<uuid:id>/', InventoryDetailView.as_view(), name='inventory-detail'),
+
+    # Stock Transfer URLs
+    path('stores/<uuid:store_id>/transfers/', StockTransferListView.as_view(), name='stock-transfer-list'),
+    path('stores/<uuid:store_id>/transfers/<uuid:id>/', StockTransferDetailView.as_view(), name='stock-transfer-detail'),
 
     # Product Search URL
     path('companies/<uuid:company_id>/product-search/<str:search_term>/', ProductSearchView.as_view(), name='product-search-with-term'),
