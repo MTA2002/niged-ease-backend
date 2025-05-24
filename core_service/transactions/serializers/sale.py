@@ -13,6 +13,7 @@ from companies.models.currency import Currency
 from transactions.models.payment_mode import PaymentMode
 from transactions.models.sale_item import SaleItem
 from financials.models.receivable import Receivable
+from decimal import Decimal
 
 
 class SaleSerializer(serializers.ModelSerializer):
@@ -101,7 +102,7 @@ class SaleSerializer(serializers.ModelSerializer):
                 actual_amount += product.sale_price * quantity
         
         # Apply tax to the actual amount
-        actual_amount_with_tax = actual_amount + (actual_amount * tax_rate)
+        actual_amount_with_tax = actual_amount + (actual_amount * (tax_rate / Decimal('100.0')))
         
         print("Actual Amount:", actual_amount)
         print("Actual Amount with Tax:", actual_amount_with_tax)
@@ -142,7 +143,7 @@ class SaleSerializer(serializers.ModelSerializer):
                 actual_amount += product.sale_price * quantity
         
         # Apply tax to the actual amount
-        actual_amount_with_tax = actual_amount + (actual_amount * tax_rate)
+        actual_amount_with_tax = actual_amount + (actual_amount * (tax_rate / Decimal('100.0')))
 
         try:
             # Fetch related objects
@@ -226,7 +227,7 @@ class SaleSerializer(serializers.ModelSerializer):
                 actual_amount += product.sale_price * quantity
         
         # Apply tax to the actual amount
-        actual_amount_with_tax = actual_amount + (actual_amount * tax_rate)
+        actual_amount_with_tax = actual_amount + (actual_amount * (tax_rate / Decimal('100.0')))
 
         # Determine sale status based on amount
         if total_amount <= 0:

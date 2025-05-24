@@ -345,7 +345,8 @@ class GenerateInventoryReportView(APIView):
         low_stock_threshold = 10  # Default threshold
         low_stock_items = []
         for item in inventory_items:
-            if item.quantity < low_stock_threshold:
+            print('item',item.quantity, low_stock_threshold)
+            if item.quantity <= low_stock_threshold:
                 low_stock_items.append({
                     'product_id': str(item.product.id),
                     'product_name': item.product.name,

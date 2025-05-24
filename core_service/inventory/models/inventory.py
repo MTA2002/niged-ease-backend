@@ -10,7 +10,6 @@ from inventory.models.product import Product
 from companies.models.store import Store
 
 logger = logging.getLogger(__name__)
-
 class Inventory(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     product = models.ForeignKey(

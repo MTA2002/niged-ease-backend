@@ -14,6 +14,7 @@ from transactions.models.payment_mode import PaymentMode
 from transactions.models.purchase_item import PurchaseItem
 from financials.models.payable import Payable
 from inventory.models.inventory import Inventory
+from decimal import Decimal
 
 class PurchaseSerializer(serializers.ModelSerializer):
     store_id = serializers.UUIDField(write_only=True)
@@ -21,7 +22,6 @@ class PurchaseSerializer(serializers.ModelSerializer):
     currency_id = serializers.UUIDField(write_only=True, required=False)
     payment_mode_id = serializers.UUIDField(write_only=True, required=False)
     items = serializers.ListField(
-       
         write_only=True,
         child=serializers.DictField(
             child=serializers.CharField()
@@ -96,8 +96,8 @@ class PurchaseSerializer(serializers.ModelSerializer):
             if product and quantity:
                 actual_amount += product.purchase_price * quantity
         
-        # Apply tax to the actual amount
-        actual_amount_with_tax = actual_amount + (actual_amount * tax_rate)
+        # Apply tax to the actual amount (tax is now a percentage)
+        actual_amount_with_tax = actual_amount + (actual_amount * (tax_rate / Decimal('100.0')))
         
         print("Actual Amount:", actual_amount)
         print("Actual Amount with Tax:", actual_amount_with_tax)
@@ -128,8 +128,8 @@ class PurchaseSerializer(serializers.ModelSerializer):
             if product and quantity:
                 actual_amount += product.purchase_price * quantity
         
-        # Apply tax to the actual amount
-        actual_amount_with_tax = actual_amount + (actual_amount * tax_rate)
+        # Apply tax to the actual amount (tax is now a percentage)
+        actual_amount_with_tax = actual_amount + (actual_amount * (tax_rate / Decimal('100.0')))
         
         print('actual_amount', actual_amount)
         print('actual_amount_with_tax', actual_amount_with_tax)
@@ -218,8 +218,8 @@ class PurchaseSerializer(serializers.ModelSerializer):
             if product and quantity:
                 actual_amount += product.purchase_price * quantity
         
-        # Apply tax to the actual amount
-        actual_amount_with_tax = actual_amount + (actual_amount * tax_rate)
+        # Apply tax to the actual amount (tax is now a percentage)
+        actual_amount_with_tax = actual_amount + (actual_amount * (tax_rate / Decimal('100.0')))
 
         # Determine purchase status based on amount
         if total_amount <= 0:
