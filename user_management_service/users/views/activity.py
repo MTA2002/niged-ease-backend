@@ -19,7 +19,8 @@ class ActivityLogView(APIView):
         activity_logs = ActivityLog.objects.all()
         serializer = ActivityLogSerializer(activity_logs, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
-  
+    
+    
     @extend_schema(
         summary="Create activity log",
         description="Create a new activity log",
@@ -31,12 +32,29 @@ class ActivityLogView(APIView):
         }
     )
     def post(self, request: Request):
+        print(request.data)
         serializer = ActivityLogSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(data=serializer.data, status=status.HTTP_201_CREATED)
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class ActivityLogViewForCompany(APIView):
+    @extend_schema(
+        summary="Get activity logs for a specific company",
+        description="Get a list of all activity logs for a specific company",
+        tags=['Activity Logs'],
+        responses={200: ActivityLogSerializer(many=True)}
+    )
+    def get(self, request: Request, company_id):
+        # First get all activity logs
+        activity_logs = ActivityLog.objects.all()
+        
+        # Then filter logs where the user's company_id matches the requested company_id
+        filtered_logs = activity_logs.filter(user__company_id=company_id)
+        
+        serializer = ActivityLogSerializer(filtered_logs, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 class ActivityLogDetailView(APIView):
     def get_activity_log(self, id):

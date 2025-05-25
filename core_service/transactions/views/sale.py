@@ -10,8 +10,8 @@ from transactions.models.sale_item import SaleItem
 from transactions.serializers.sale import SaleSerializer
 from transactions.serializers.sale_item import SaleItemSerializer
 from inventory.models.inventory import Inventory
-
-
+import os
+import requests
 class SaleListView(APIView):
     @extend_schema(
         description="Get a list of all sales",
@@ -221,6 +221,14 @@ class SaleItemDetailView(APIView):
                 )
             
             item.delete()
+
+            requests.post(os.getenv('USER_SERVICE_URL') + '/activity-logs/', json={
+            "user": request.user.id,
+            'action': 'deleted sales',
+            'description': 'deleted sales with id ' + str(sale_id),
+        },  headers={'Authorization': request.headers.get('Authorization')})
+            
+
             return Response({'message': 'Sale item deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
         except Sale.DoesNotExist:
             return Response({'error': 'Sale not found'}, status=status.HTTP_404_NOT_FOUND)

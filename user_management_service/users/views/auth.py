@@ -1,3 +1,4 @@
+# type: ignore
 import os
 import requests
 from rest_framework.views import APIView
@@ -17,7 +18,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from drf_spectacular.types import OpenApiTypes
 
-from users.serializers.auth import LoginSerializer, RefreshTokenSerializer, ResendOTPSerializer, VerifyOTPSerializer, VerifyTokenSerializer
+from users.serializers.auth import LoginSerializer, RefreshTokenSerializer, ResendOTPSerializer, VerifyOTPSerializer, VerifyTokenSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer
 
 
 def create_otp_email_html(otp: str, user_name: str) -> str:
@@ -524,5 +525,234 @@ class VerifyTokenView(APIView):
         except (InvalidToken, TokenError, User.DoesNotExist):
             return Response(
                 {"error": "Token is invalid or expired"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    @extend_schema(
+        summary="Request password reset",
+        description="Send password reset OTP to email address",
+        tags=['Authentication'],
+        request=PasswordResetRequestSerializer,
+        responses={
+            200: OpenApiResponse(
+                description='OTP sent successfully',
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'message': {'type': 'string', 'example': "Password reset OTP sent to your email"}
+                    }
+                }
+            ),
+            400: OpenApiResponse(
+                description='Bad Request',
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'error': {'type': 'string', 'example': "User not found"}
+                    }
+                }
+            )
+        }
+    )
+    def post(self, request: Request) -> Response:
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        email = serializer.validated_data['email']
+        user = User.objects.get(email=email)
+        
+        # Generate OTP
+        otp = get_random_string(length=6, allowed_chars='0123456789')
+        
+        # Save OTP
+        OTP.objects.update_or_create(
+            user=user,
+            defaults={'otp': otp}
+        )
+
+        # Create HTML email for password reset
+        html_message = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Password Reset Request</title>
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: #f4f4f4;
+                }}
+                .email-container {{
+                    background-color: #ffffff;
+                    border-radius: 10px;
+                    padding: 40px;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                    border-top: 4px solid #e74c3c;
+                }}
+                .header {{
+                    text-align: center;
+                    margin-bottom: 30px;
+                }}
+                .logo {{
+                    font-size: 28px;
+                    font-weight: bold;
+                    color: #e74c3c;
+                    margin-bottom: 10px;
+                }}
+                .title {{
+                    font-size: 24px;
+                    color: #2c3e50;
+                    margin-bottom: 20px;
+                }}
+                .otp-container {{
+                    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+                    border-radius: 10px;
+                    padding: 30px;
+                    text-align: center;
+                    margin: 30px 0;
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                }}
+                .otp-code {{
+                    font-size: 36px;
+                    font-weight: bold;
+                    color: #ffffff;
+                    letter-spacing: 8px;
+                    margin: 15px 0;
+                }}
+                .warning {{
+                    background-color: #fff3cd;
+                    border: 1px solid #ffeeba;
+                    color: #856404;
+                    padding: 15px;
+                    border-radius: 5px;
+                    margin: 20px 0;
+                    text-align: center;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="email-container">
+                <div class="header">
+                    <div class="logo">🔐 NgedEase</div>
+                    <h1 class="title">Password Reset Request</h1>
+                </div>
+                
+                <p>Hello {user.first_name},</p>
+                
+                <p>We received a request to reset your password. Use the following code to proceed with your password reset:</p>
+                
+                <div class="otp-container">
+                    <div class="otp-code">{otp}</div>
+                </div>
+                
+                <p>This code will expire in 10 minutes.</p>
+                
+                <div class="warning">
+                    If you didn't request this password reset, please ignore this email or contact support if you have concerns.
+                </div>
+                
+                <p>Best regards,<br>The NgedEase Team</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        # Send email
+        send_mail(
+            'Password Reset Request',
+            f'Your password reset code is: {otp}. This code will expire in 10 minutes.',
+            'mahfouz.teyib@a2sv.org',
+            [email],
+            fail_silently=False,
+            html_message=html_message
+        )
+
+        return Response(
+            {"message": "Password reset OTP sent to your email"},
+            status=status.HTTP_200_OK
+        )
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    @extend_schema(
+        summary="Confirm password reset",
+        description="Reset password using OTP and new password",
+        tags=['Authentication'],
+        request=PasswordResetConfirmSerializer,
+        responses={
+            200: OpenApiResponse(
+                description='Password reset successful',
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'message': {'type': 'string', 'example': "Password reset successful"}
+                    }
+                }
+            ),
+            400: OpenApiResponse(
+                description='Bad Request',
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'error': {'type': 'string', 'example': "Invalid OTP"}
+                    }
+                }
+            )
+        }
+    )
+    def post(self, request: Request) -> Response:
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        email = serializer.validated_data['email']
+        otp = serializer.validated_data['otp']
+        new_password = serializer.validated_data['new_password']
+
+        # Get user and verify OTP
+        try:
+            user = User.objects.get(email=email)
+            otp_object = OTP.objects.get(user=user, otp=otp)
+            
+            if otp_object.is_expired():
+                return Response(
+                    {"error": "OTP has expired. Please request a new one."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Set new password
+            user.set_password(new_password)
+            user.save()
+
+            # Delete the used OTP
+            otp_object.delete()
+
+            return Response(
+                {"message": "Password reset successful"},
+                status=status.HTTP_200_OK
+            )
+
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except OTP.DoesNotExist:
+            return Response(
+                {"error": "Invalid OTP"},
                 status=status.HTTP_400_BAD_REQUEST
             )
