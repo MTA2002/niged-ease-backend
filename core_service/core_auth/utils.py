@@ -3,6 +3,7 @@ from django.contrib.auth.models import AnonymousUser
 
 class StatelessUser(AnonymousUser):
     def __init__(self, user_data):
+        self.id = user_data.get('id', '')
         self.email = user_data.get('email', '')
         self.first_name = user_data.get('first_name', '')
         self.last_name = user_data.get('last_name', '')

@@ -11,7 +11,7 @@ from inventory.models.inventory import Inventory
 from companies.models.store import Store
 from inventory.models.product import Product
 from inventory.serializers.product import ProductSerializer
-
+import os
 
 class ProductListView(APIView):
     @extend_schema(
@@ -94,4 +94,12 @@ class ProductDetailView(APIView):
     def delete(self, request: Request, id, store_id):
         product = self.get_product(id, store_id)
         product.delete()
+        import requests
+        
+        requests.post(os.getenv('USER_SERVICE_URL') + '/activity-logs/', json={
+            "user": request.user.id,
+            'action': 'deleted product',
+            'description': 'deleted product with id ' + str(id),
+        },  headers={'Authorization': request.headers.get('Authorization')})
+
         return Response({'message': 'Product deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

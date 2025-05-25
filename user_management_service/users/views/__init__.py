@@ -1,7 +1,10 @@
 from .user import UserListView, UserDetailView
 from .role import RoleListView, RoleDetailView, PermissionListView, PermissionDetailView
 from .activity import ActivityLogView
-from .auth import LoginView, VerifyOTPView, ResendOTPView, RefreshTokenView, VerifyTokenView
+from .auth import (
+    LoginView, VerifyOTPView, ResendOTPView, RefreshTokenView, VerifyTokenView,
+    PasswordResetRequestView, PasswordResetConfirmView
+)
 
 __all__ = [
     'UserListView',
@@ -15,5 +18,7 @@ __all__ = [
     'VerifyOTPView',
     'ResendOTPView',
     'RefreshTokenView',
-    'VerifyTokenView'
+    'VerifyTokenView',
+    'PasswordResetRequestView',
+    'PasswordResetConfirmView'
 ] 

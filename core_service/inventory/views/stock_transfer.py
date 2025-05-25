@@ -10,6 +10,7 @@ from decimal import Decimal
 from inventory.models.stock_transfer import StockTransfer
 from inventory.serializers.stock_transfer import StockTransferSerializer
 from inventory.models.inventory import Inventory
+from django.db import transaction
 
 class StockTransferListView(APIView):
 
@@ -65,15 +66,11 @@ class StockTransferListView(APIView):
 
 class StockTransferDetailView(APIView):
 
-    def get_transfer(self, id, store_id):
+    def get_transfer(self, id):
         try:
-            transfer = StockTransfer.objects.get(
-                Q(source_store=store_id) | Q(destination_store=store_id),
-                pk=id
-            )
-            return transfer
+            return StockTransfer.objects.get(id=id)
         except StockTransfer.DoesNotExist:
-            raise Http404
+            raise Http404("Transfer not found")
     
     @extend_schema(
         description="Get details of a specific stock transfer",
@@ -97,7 +94,7 @@ class StockTransferDetailView(APIView):
         }
     )
     def get(self, request: Request, id, store_id):
-        transfer = self.get_transfer(id, store_id)
+        transfer = self.get_transfer(id)
         serializer = StockTransferSerializer(transfer)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -125,7 +122,7 @@ class StockTransferDetailView(APIView):
         }
     )
     def put(self, request: Request, id, store_id):
-        transfer = self.get_transfer(id, store_id)
+        transfer = self.get_transfer(id)
         
         # Only source store can update
         if transfer.source_store.id != store_id:
@@ -163,8 +160,9 @@ class StockTransferDetailView(APIView):
             404: OpenApiResponse(description="Transfer not found")
         }
     )
+    @transaction.atomic
     def delete(self, request: Request, id, store_id):
-        transfer = self.get_transfer(id, store_id)
+        transfer = self.get_transfer(id)
         
         # Only source store can cancel
         if transfer.source_store.id != store_id:
@@ -172,7 +170,6 @@ class StockTransferDetailView(APIView):
                 {"detail": "Only source store can cancel the transfer"},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
         
         # Return the quantity to source inventory
         source_inventory = Inventory.objects.select_for_update().get(
@@ -188,7 +185,7 @@ class StockTransferDetailView(APIView):
         )
         
         destination_inventory.quantity -= Decimal(str(transfer.quantity))
-        source_inventory.save()
+        destination_inventory.save()
             
         # Mark as cancelled
         transfer.status = StockTransfer.CANCELLED

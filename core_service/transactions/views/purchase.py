@@ -11,7 +11,8 @@ from transactions.models.purchase_item import PurchaseItem
 from transactions.serializers.purchase import PurchaseSerializer
 from transactions.serializers.purchase_item import PurchaseItemSerializer
 from rest_framework import serializers
-
+import os
+import requests
 
 class PurchaseListView(APIView):
     @extend_schema(
@@ -222,6 +223,12 @@ class PurchaseItemDetailView(APIView):
                 )
             
             item.delete()
+            requests.post(os.getenv('USER_SERVICE_URL') + '/activity-logs/', json={
+            "user": request.user.id,
+            'action': 'deleted sales',
+            'description': 'deleted sales with id ' + str(purchase_id),
+        },  headers={'Authorization': request.headers.get('Authorization')})
+            
             return Response({'message': 'Purchase item deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
         except Purchase.DoesNotExist:
             return Response({'error': 'Purchase not found'}, status=status.HTTP_404_NOT_FOUND)
