@@ -82,3 +82,16 @@ class ProductSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid store ID")
         
         return Product.objects.create(store_id=store, color_id=color, collection_id=collection, **validated_data) 
+    
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.description = validated_data.get('description', instance.description)
+        instance.image = validated_data.get('image', instance.image)
+        instance.product_unit_id = validated_data.get('product_unit_id', instance.product_unit_id)
+        instance.product_category_id = validated_data.get('product_category_id', instance.product_category_id)
+        instance.purchase_price = validated_data.get('purchase_price', instance.purchase_price)
+        instance.sale_price = validated_data.get('sale_price', instance.sale_price)
+        instance.color_id = Color.objects.get(id=validated_data.get('color_id', instance.color_id))
+        instance.collection_id = Collection.objects.get(id=validated_data.get('collection_id', instance.collection_id))
+        instance.save()
+        return instance

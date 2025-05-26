@@ -35,9 +35,9 @@ class CustomerListView(APIView):
         try:
             store = Store.objects.get(pk=store_id)
             company = store.company_id
-            current_customer_count = Customer.objects.filter(store__company_id=company).count()
+            current_customer_count = Customer.objects.filter(store_id__company_id=company).count()
             
-            if not company.check_subscription_limits('customers', current_customer_count):
+            if current_customer_count >= company.subscription_plan.max_customers:
                 return Response(
                     {
                         'error': 'Subscription customer limit reached',
