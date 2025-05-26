@@ -240,7 +240,8 @@ class SaleSerializer(serializers.ModelSerializer):
         # Update the instance fields
         instance.status = status
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+            if attr != 'store_id':  # Skip store_id updates
+                setattr(instance, attr, value)
         
         instance.save()
 
