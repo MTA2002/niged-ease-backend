@@ -7,6 +7,7 @@ from rest_framework.permissions import AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from companies.models.store import Store
 from companies.serializers.store import StoreSerializer
+from companies.models.company import Company
 
 
 class StoreListView(APIView):
@@ -27,17 +28,34 @@ class StoreListView(APIView):
         request=StoreSerializer,
         responses={
             201: StoreSerializer,
-            400: OpenApiResponse(description="Invalid data")
+            400: OpenApiResponse(description="Invalid data"),
+            403: OpenApiResponse(description="Subscription limit reached")
         }
     )
     def post(self, request: Request, company_id):
-    
-
-        serializer = StoreSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
-        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Get the company and check subscription limits
+        try:
+            company = Company.objects.get(pk=company_id)
+            current_store_count = Store.objects.filter(company_id=company_id).count()
+            
+            if not company.check_subscription_limits('stores', current_store_count):
+                return Response(
+                    {
+                        'error': 'Subscription store limit reached',
+                        'current_count': current_store_count,
+                        'max_allowed': company.subscription_plan.max_stores if company.subscription_plan else 0
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+            serializer = StoreSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Company.DoesNotExist:
+            raise Http404
 
 
 class StoreDetailView(APIView):

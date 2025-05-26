@@ -7,6 +7,8 @@ from rest_framework.request import Request
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from transactions.models.customer import Customer
 from transactions.serializers.customer import CustomerSerializer
+from companies.models.store import Store
+from companies.models.company import Company
 
 
 class CustomerListView(APIView):
@@ -24,15 +26,35 @@ class CustomerListView(APIView):
         request=CustomerSerializer,
         responses={
             201: CustomerSerializer,
-            400: OpenApiResponse(description="Invalid data")
+            400: OpenApiResponse(description="Invalid data"),
+            403: OpenApiResponse(description="Subscription limit reached")
         }
     )
     def post(self, request: Request, store_id):
-        serializer = CustomerSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
-        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Get the store and company to check subscription limits
+        try:
+            store = Store.objects.get(pk=store_id)
+            company = store.company_id
+            current_customer_count = Customer.objects.filter(store__company_id=company).count()
+            
+            if not company.check_subscription_limits('customers', current_customer_count):
+                return Response(
+                    {
+                        'error': 'Subscription customer limit reached',
+                        'current_count': current_customer_count,
+                        'max_allowed': company.subscription_plan.max_customers if company.subscription_plan else 0
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            serializer = CustomerSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Store.DoesNotExist:
+            raise Http404
 
 
 class CustomerDetailView(APIView):

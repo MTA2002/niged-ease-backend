@@ -28,22 +28,42 @@ class ProductListView(APIView):
         request=ProductSerializer,
         responses={
             201: ProductSerializer,
-            400: OpenApiResponse(description="Invalid data")
+            400: OpenApiResponse(description="Invalid data"),
+            403: OpenApiResponse(description="Subscription limit reached")
         }
     )
     def post(self, request: Request, store_id):
         request.data['store_id'] = store_id
-        serializer = ProductSerializer(data=request.data)
-        if serializer.is_valid():
-            product = serializer.save()
-            store = Store.objects.get(id=store_id)
-            Inventory.objects.create(
-                product=product,
-                store=store,
-                quantity=Decimal('0')
-            )
-            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
-        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get the store and company to check subscription limits
+        try:
+            store = Store.objects.get(pk=store_id)
+            company = store.company_id
+            current_product_count = Product.objects.filter(store__company_id=company).count()
+            
+            if not company.check_subscription_limits('products', current_product_count):
+                return Response(
+                    {
+                        'error': 'Subscription product limit reached',
+                        'current_count': current_product_count,
+                        'max_allowed': company.subscription_plan.max_products if company.subscription_plan else 0
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            serializer = ProductSerializer(data=request.data)
+            if serializer.is_valid():
+                product = serializer.save()
+                Inventory.objects.create(
+                    product=product,
+                    store=store,
+                    quantity=Decimal('0')
+                )
+                return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Store.DoesNotExist:
+            raise Http404
 
 
 class ProductDetailView(APIView):

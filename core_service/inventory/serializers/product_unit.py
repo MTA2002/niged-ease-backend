@@ -4,15 +4,12 @@ from inventory.models.product_unit import ProductUnit
 from companies.serializers.store import StoreSerializer
 
 class ProductUnitSerializer(serializers.ModelSerializer):
-    store_id = serializers.UUIDField(write_only=True)
-    store = StoreSerializer(read_only=True)
-
+    
     class Meta:
         model = ProductUnit
         fields = [
-            'id', 'store_id', 'store', 'name', 
-            'description', 'created_at', 
-            'updated_at'
+            'id', 'store_id', 'name', 
+            'description', 'created_at', 'updated_at'
         ]
 
     def create(self, validated_data):
