@@ -234,6 +234,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         
+        instance.store_id = Store.objects.get(id=validated_data.get('store_id', instance.store_id))
         instance.save()
 
         # Handle items update if provided
