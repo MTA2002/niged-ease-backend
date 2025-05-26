@@ -4,13 +4,12 @@ from companies.serializers.store import StoreSerializer
 from companies.models.store import Store
 
 class ProductCategorySerializer(serializers.ModelSerializer):
-    store_id = serializers.UUIDField(write_only=True)
-    store = StoreSerializer(read_only=True)
+    
     
     class Meta:
         model = ProductCategory
         fields = [
-            'id', 'store_id', 'store', 'name', 
+            'id', 'store_id', 'name', 
             'description', 'created_at', 
             'updated_at'
         ]
