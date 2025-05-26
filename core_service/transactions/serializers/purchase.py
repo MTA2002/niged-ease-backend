@@ -232,9 +232,9 @@ class PurchaseSerializer(serializers.ModelSerializer):
         # Update the instance fields
         instance.status = status
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+            if attr != 'store_id':  # Skip store_id updates
+                setattr(instance, attr, value)
         
-        instance.store_id = Store.objects.get(id=validated_data.get('store_id', instance.store_id))
         instance.save()
 
         # Handle items update if provided
