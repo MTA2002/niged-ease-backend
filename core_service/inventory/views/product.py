@@ -41,11 +41,12 @@ class ProductListView(APIView):
             company = store.company_id
             current_product_count = Product.objects.filter(store__company_id=company).count()
             
-            if not company.check_subscription_limits('products', current_product_count):
+            if current_product_count >= company.subscription_plan.max_products:# type: ignore
+
                 return Response(
                     {
                         'error': 'Subscription product limit reached',
-                        'current_count': current_product_count,
+                        'current_count': current_store_count,
                         'max_allowed': company.subscription_plan.max_products if company.subscription_plan else 0
                     },
                     status=status.HTTP_403_FORBIDDEN
@@ -98,6 +99,7 @@ class ProductDetailView(APIView):
     def put(self, request: Request, id, store_id):
         product = self.get_product(id, store_id)
         request.data['store_id'] = store_id
+        print('product', product)
         serializer = ProductSerializer(product, data=request.data)
         if serializer.is_valid():
             serializer.save()

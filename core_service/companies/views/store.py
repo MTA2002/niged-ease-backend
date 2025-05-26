@@ -38,7 +38,8 @@ class StoreListView(APIView):
             company = Company.objects.get(pk=company_id)
             current_store_count = Store.objects.filter(company_id=company_id).count()
             
-            if not company.check_subscription_limits('stores', current_store_count):
+            if current_store_count >= company.subscription_plan.max_stores:# type: ignore
+
                 return Response(
                     {
                         'error': 'Subscription store limit reached',
