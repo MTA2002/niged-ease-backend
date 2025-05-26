@@ -32,15 +32,8 @@ class StockTransferSerializer(serializers.ModelSerializer):
                 product=data['product']
             )
             
-            # For updates, we need to consider the current transfer quantity
-            if self.instance:
-                required_quantity = (
-                    data['quantity'] - self.instance.quantity 
-                    if data['source_store'] == self.instance.source_store 
-                    else data['quantity']
-                )
-            else:
-                required_quantity = data['quantity']
+          
+            required_quantity = data['quantity']
                 
             if source_inventory.quantity < required_quantity:
                 raise serializers.ValidationError(
