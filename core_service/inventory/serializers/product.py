@@ -10,8 +10,7 @@ from inventory.serializers.product_unit import ProductUnitSerializer
 from inventory.serializers.product_category import ProductCategorySerializer
 
 class ProductSerializer(serializers.ModelSerializer):
-    store_id = serializers.UUIDField(write_only=True)
-    store = StoreSerializer(read_only=True)
+   
     product_unit = ProductUnitSerializer(read_only=True)
     product_category = ProductCategorySerializer(read_only=True)
     product_unit_id = serializers.UUIDField(write_only=True)
@@ -26,7 +25,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [ 
-            'id', 'store_id', 'store', 'name', 
+            'id', 'store_id', 'name', 
             'description', 'image',
             'product_unit', 'product_category', 
             'product_unit_id', 'product_category_id', 
