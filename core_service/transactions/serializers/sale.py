@@ -15,7 +15,6 @@ from transactions.models.sale_item import SaleItem
 from financials.models.receivable import Receivable
 from decimal import Decimal
 
-
 class SaleSerializer(serializers.ModelSerializer):
     store_id = serializers.UUIDField(write_only=True)
     customer_id = serializers.UUIDField(write_only=True)
@@ -102,6 +101,8 @@ class SaleSerializer(serializers.ModelSerializer):
 
             if product and quantity:
                 # Use item_sale_price if provided, otherwise use product's sale_price
+                print('item_sale_price', item_sale_price)
+                print('product.sale_price', product.sale_price)
                 price_to_use = item_sale_price if item_sale_price is not None else product.sale_price
                 actual_amount += price_to_use * quantity
         
