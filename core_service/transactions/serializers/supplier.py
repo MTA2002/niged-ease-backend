@@ -11,7 +11,7 @@ class SupplierSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'store_id', 'name', 'email', 
             'phone', 'address', 
-            'credit_limit', 'is_active',
+            'is_active',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at'] 

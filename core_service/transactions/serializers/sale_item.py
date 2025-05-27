@@ -14,7 +14,7 @@ class SaleItemSerializer(serializers.ModelSerializer):
         model = SaleItem
         fields = [
             'id', 'sale', 'product_id', 'product', 
-            'quantity', 'created_at', 'updated_at'
+            'item_sale_price', 'quantity', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
         extra_kwargs = {

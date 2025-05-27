@@ -79,27 +79,31 @@ class SaleSerializer(serializers.ModelSerializer):
             product_id = item.get('product_id')
             try:
                 quantity = int(item.get('quantity', 0))
+                item_sale_price = Decimal(str(item.get('item_sale_price'))) if item.get('item_sale_price') is not None else None
             except (ValueError, TypeError):
-                raise serializers.ValidationError("Quantity must be a valid integer.")
+                raise serializers.ValidationError("Quantity must be a valid integer and item_sale_price must be a valid decimal.")
                 
-            print("Product ID:", product_id)
-            print("Quantity:", quantity)
             if product_id is None:
                 raise serializers.ValidationError("Product cannot be null.")
             if quantity is None:
                 raise serializers.ValidationError("Quantity cannot be null.")
-            print(not isinstance(quantity, int), quantity)
             if quantity <= 0:
                 raise serializers.ValidationError("Quantity must be a positive integer.")
             if not isinstance(product_id, str):
                 raise serializers.ValidationError("Product ID must be a string.")
             
             product = Product.objects.filter(id=product_id).first()
-            if Inventory.objects.filter(product=product, store=store_id).first().quantity < quantity:
-                raise serializers.ValidationError("Insufficient quantity in inventory.")
-            
+            if not product:
+                raise serializers.ValidationError(f"Product with id {product_id} does not exist.")
+
+            # Validate item_sale_price if provided
+            if item_sale_price is not None and item_sale_price < product.sale_price:
+                raise serializers.ValidationError(f"Item sale price ({item_sale_price}) cannot be less than product sale price ({product.sale_price})")
+
             if product and quantity:
-                actual_amount += product.sale_price * quantity
+                # Use item_sale_price if provided, otherwise use product's sale_price
+                price_to_use = item_sale_price if item_sale_price is not None else product.sale_price
+                actual_amount += price_to_use * quantity
         
         # Apply tax to the actual amount
         actual_amount_with_tax = actual_amount + (actual_amount * (tax_rate / Decimal('100.0')))
@@ -179,12 +183,14 @@ class SaleSerializer(serializers.ModelSerializer):
             for item_data in items_data:
                 product = Product.objects.get(id=item_data['product_id'])
                 quantity = int(item_data['quantity'])
+                item_sale_price = Decimal(str(item_data.get('item_sale_price'))) if item_data.get('item_sale_price') is not None else None
                 
                 # Create sale item
                 SaleItem.objects.create(
                     sale=sale,
                     product=product,
-                    quantity=quantity
+                    quantity=quantity,
+                    item_sale_price=item_sale_price
                 )
                 
                 # Update inventory

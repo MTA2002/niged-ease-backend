@@ -80,8 +80,9 @@ class PurchaseSerializer(serializers.ModelSerializer):
             product_id = item.get('product_id')
             try:
                 quantity = int(item.get('quantity', 0))
+                item_purchase_price = Decimal(str(item.get('item_purchase_price'))) if item.get('item_purchase_price') is not None else None
             except (ValueError, TypeError):
-                raise serializers.ValidationError("Quantity must be a valid integer.")
+                raise serializers.ValidationError("Quantity must be a valid integer and item_purchase_price must be a valid decimal.")
                 
             if product_id is None:
                 raise serializers.ValidationError("Product cannot be null.")
@@ -93,8 +94,17 @@ class PurchaseSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Product ID must be a string.")
             
             product = Product.objects.filter(id=product_id).first()
+            if not product:
+                raise serializers.ValidationError(f"Product with id {product_id} does not exist.")
+
+            # Validate item_purchase_price if provided
+            if item_purchase_price is not None and item_purchase_price > product.sale_price:
+                raise serializers.ValidationError(f"Item purchase price ({item_purchase_price}) cannot be greater than product sale price ({product.sale_price})")
+
             if product and quantity:
-                actual_amount += product.purchase_price * quantity
+                # Use item_purchase_price if provided, otherwise use product's purchase_price
+                price_to_use = item_purchase_price if item_purchase_price is not None else product.purchase_price
+                actual_amount += price_to_use * quantity
         
         # Apply tax to the actual amount (tax is now a percentage)
         actual_amount_with_tax = actual_amount + (actual_amount * (tax_rate / Decimal('100.0')))
@@ -123,10 +133,13 @@ class PurchaseSerializer(serializers.ModelSerializer):
         for item in items_data:
             product_id = item.get('product_id')
             quantity = int(item.get('quantity', 0))
+            item_purchase_price = Decimal(str(item.get('item_purchase_price'))) if item.get('item_purchase_price') is not None else None
             product = Product.objects.filter(id=product_id).first()
 
             if product and quantity:
-                actual_amount += product.purchase_price * quantity
+                # Use item_purchase_price if provided, otherwise use product's purchase_price
+                price_to_use = item_purchase_price if item_purchase_price is not None else product.purchase_price
+                actual_amount += price_to_use * quantity
         
         # Apply tax to the actual amount (tax is now a percentage)
         actual_amount_with_tax = actual_amount + (actual_amount * (tax_rate / Decimal('100.0')))
@@ -165,12 +178,14 @@ class PurchaseSerializer(serializers.ModelSerializer):
             for item_data in items_data:
                 product = Product.objects.get(id=item_data['product_id'])
                 quantity = int(item_data['quantity'])
+                item_purchase_price = Decimal(str(item_data.get('item_purchase_price'))) if item_data.get('item_purchase_price') is not None else None
                 
                 # Create purchase item
                 PurchaseItem.objects.create(
                     purchase=purchase,
                     product=product,
-                    quantity=quantity
+                    quantity=quantity,
+                    item_purchase_price=item_purchase_price
                 )
                 
                 # Update or create inventory
@@ -213,10 +228,13 @@ class PurchaseSerializer(serializers.ModelSerializer):
         for item in items_data:
             product_id = item.get('product_id')
             quantity = int(item.get('quantity', 0))
+            item_purchase_price = Decimal(str(item.get('item_purchase_price'))) if item.get('item_purchase_price') is not None else None
             product = Product.objects.filter(id=product_id).first()
 
             if product and quantity:
-                actual_amount += product.purchase_price * quantity
+                # Use item_purchase_price if provided, otherwise use product's purchase_price
+                price_to_use = item_purchase_price if item_purchase_price is not None else product.purchase_price
+                actual_amount += price_to_use * quantity
         
         # Apply tax to the actual amount (tax is now a percentage)
         actual_amount_with_tax = actual_amount + (actual_amount * (tax_rate / Decimal('100.0')))
@@ -242,7 +260,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
             # First, reverse inventory quantities from old items
             old_items = PurchaseItem.objects.filter(purchase=instance)
             for old_item in old_items:
-                inventory = Inventory.objects.get(product=old_item.product, store=instance.store)
+                inventory = Inventory.objects.get(product=old_item.product, store_id=instance.store_id)
                 inventory.quantity -= old_item.quantity
                 inventory.save()
             
@@ -253,23 +271,25 @@ class PurchaseSerializer(serializers.ModelSerializer):
             for item_data in items_data:
                 product = Product.objects.get(id=item_data['product_id'])
                 quantity = item_data['quantity']
+                item_purchase_price = Decimal(str(item_data.get('item_purchase_price'))) if item_data.get('item_purchase_price') is not None else None
                 
                 # Create new purchase item
                 PurchaseItem.objects.create(
                     purchase=instance,
                     product=product,
-                    quantity=quantity
+                    quantity=quantity,
+                    item_purchase_price=item_purchase_price
                 )
                 
                 # Update or create inventory
                 try:
-                    inventory = Inventory.objects.get(product=product, store=instance.store)
+                    inventory = Inventory.objects.get(product=product, store_id=instance.store_id)
                     inventory.quantity += quantity
                     inventory.save()
                 except Inventory.DoesNotExist:
                     Inventory.objects.create(
                         product=product,
-                        store=instance.store,
+                        store_id=instance.store_id,
                         quantity=quantity
                     )
 
@@ -289,7 +309,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
             if status in [Purchase.PurchaseStatus.UNPAID, Purchase.PurchaseStatus.PARTIALLY_PAID]:
                 payable_amount = actual_amount_with_tax - total_amount
                 Payable.objects.create(
-                    store_id=instance.store,
+                    store_id=Store.objects.get(id=instance.store_id),
                     purchase=instance,
                     amount=payable_amount,
                     currency=instance.currency

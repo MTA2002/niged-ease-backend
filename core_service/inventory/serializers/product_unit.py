@@ -12,11 +12,11 @@ class ProductUnitSerializer(serializers.ModelSerializer):
             'description', 'created_at', 'updated_at'
         ]
 
-    def create(self, validated_data):
-        store_id = validated_data.pop('store_id')
-        try:
-            store = Store.objects.get(id=store_id)
-        except Store.DoesNotExist:
-            raise serializers.ValidationError("Invalid store ID")
+    # def create(self, validated_data):
+    #     store_id = validated_data.pop('store_id')
+    #     try:
+    #         store = Store.objects.get(id=store_id)
+    #     except Store.DoesNotExist:
+    #         raise serializers.ValidationError("Invalid store ID")
         
-        return ProductUnit.objects.create(store_id=store, **validated_data)
+    #     return ProductUnit.objects.create(store_id=store, **validated_data)
