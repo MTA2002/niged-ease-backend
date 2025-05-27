@@ -19,7 +19,7 @@ class ProductListView(APIView):
         responses={200: ProductSerializer(many=True)}
     )
     def get(self, request: Request, store_id):
-        products = Product.objects.filter(store_id=store_id)
+        products = Product.objects.filter(store_id_id=store_id)
         serializer = ProductSerializer(products, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
     
@@ -33,16 +33,12 @@ class ProductListView(APIView):
         }
     )
     def post(self, request: Request, store_id):
-        request.data['store_id'] = store_id
-        
-        # Get the store and company to check subscription limits
         try:
             store = Store.objects.get(pk=store_id)
             company = store.company_id
-            current_product_count = Product.objects.filter(store__company_id=company).count()
+            current_product_count = Product.objects.filter(store_id__company_id=company).count()
             
             if current_product_count >= company.subscription_plan.max_products:# type: ignore
-
                 return Response(
                     {
                         'error': 'Subscription product limit reached',
@@ -52,6 +48,8 @@ class ProductListView(APIView):
                     status=status.HTTP_403_FORBIDDEN
                 )
             
+            # Add store_id to request data
+            request.data['store_id'] = store_id
             serializer = ProductSerializer(data=request.data)
             if serializer.is_valid():
                 product = serializer.save()

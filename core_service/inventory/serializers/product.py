@@ -70,18 +70,16 @@ class ProductSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
     def create(self, validated_data):
-        store_id = validated_data.pop('store_id')
         color_id = validated_data.pop('color_id')
         collection_id = validated_data.pop('collection_id')
 
         try:
-            store = Store.objects.get(id=store_id)
             color = Color.objects.get(id=color_id)
             collection = Collection.objects.get(id=collection_id)
-        except Store.DoesNotExist:
-            raise serializers.ValidationError("Invalid store ID")
+        except (Color.DoesNotExist, Collection.DoesNotExist):
+            raise serializers.ValidationError("Invalid color or collection ID")
         
-        return Product.objects.create(store_id=store, color_id=color, collection_id=collection, **validated_data) 
+        return Product.objects.create(color_id=color, collection_id=collection, **validated_data) 
     
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)

@@ -5,7 +5,7 @@ from companies.models.store import Store
 
 class ProductCategorySerializer(serializers.ModelSerializer):
     
-    
+
     class Meta:
         model = ProductCategory
         fields = [
@@ -19,11 +19,11 @@ class ProductCategorySerializer(serializers.ModelSerializer):
             'name': {'required': True}
         }
 
-    def create(self, validated_data):
-        store_id = validated_data.pop('store_id')
-        try:
-            store = Store.objects.get(id=store_id)
-        except Store.DoesNotExist:
-            raise serializers.ValidationError("Invalid store ID")
+    # def create(self, validated_data):
+    #     store_id = validated_data.pop('store_id')
+    #     try:
+    #         store = Store.objects.get(id=store_id)
+    #     except Store.DoesNotExist:
+    #         raise serializers.ValidationError("Invalid store ID")
         
-        return ProductCategory.objects.create(store_id=store, **validated_data) 
+    #     return ProductCategory.objects.create(store_id=store, **validated_data) 
