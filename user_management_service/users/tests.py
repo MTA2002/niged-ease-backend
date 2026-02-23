@@ -36,6 +36,7 @@ class UserProfileViewTests(TestCase):
             'first_name': 'Updated',
             'last_name': 'Name',
             'phone_number': '9876543210',
+            'profile_image': '',
         })
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['first_name'], 'Updated')
@@ -55,7 +56,7 @@ class UserProfileViewTests(TestCase):
         self.client.force_authenticate(user=self.user)
         original_email = self.user.email
         original_role = self.user.role
-        response = self.client.put('/auth/profile/', {
+        response = self.client.patch('/auth/profile/', {
             'email': 'newemail@example.com',
             'role': 'super_admin',
             'first_name': 'Test',

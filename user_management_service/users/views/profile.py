@@ -23,9 +23,16 @@ class UserProfileView(APIView):
         serializer = UserProfileSerializer(request.user)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
+    def _update_profile(self, request: Request, partial: bool) -> Response:
+        serializer = UserProfileSerializer(request.user, data=request.data, partial=partial)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     @extend_schema(
         summary="Update user profile",
-        description="Update the profile of the currently authenticated user",
+        description="Update the profile of the currently authenticated user. All writable fields are required.",
         tags=['Profile'],
         request=UserProfileSerializer,
         responses={
@@ -35,11 +42,7 @@ class UserProfileView(APIView):
         }
     )
     def put(self, request: Request) -> Response:
-        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(data=serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return self._update_profile(request, partial=False)
 
     @extend_schema(
         summary="Partially update user profile",
@@ -53,8 +56,5 @@ class UserProfileView(APIView):
         }
     )
     def patch(self, request: Request) -> Response:
-        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(data=serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return self._update_profile(request, partial=True)
+
