@@ -5,7 +5,8 @@ from .views import (
     UserListView, UserDetailView,
     RoleListView, RoleDetailView,
     PermissionListView, PermissionDetailView,
-    ActivityLogView
+    ActivityLogView,
+    UserProfileView,
 )
 from .views.auth import (
     LoginView, VerifyOTPView, ResendOTPView, 
@@ -29,6 +30,9 @@ urlpatterns = [
     path('auth/resend-otp/', ResendOTPView.as_view(), name='auth-resend-otp'),
     path('auth/refresh-token/', RefreshTokenView.as_view(), name='auth-refresh-token'),
     path('auth/verify-token/', VerifyTokenView.as_view(), name='auth-verify-token'),
+    
+    # Profile URLs
+    path('auth/profile/', UserProfileView.as_view(), name='user-profile'),
     
     # Password Reset URLs
     path('auth/password-reset/', PasswordResetRequestView.as_view(), name='password-reset-request'),

@@ -5,6 +5,7 @@ from .auth import (
     LoginView, VerifyOTPView, ResendOTPView, RefreshTokenView, VerifyTokenView,
     PasswordResetRequestView, PasswordResetConfirmView
 )
+from .profile import UserProfileView
 
 __all__ = [
     'UserListView',
@@ -20,5 +21,6 @@ __all__ = [
     'RefreshTokenView',
     'VerifyTokenView',
     'PasswordResetRequestView',
-    'PasswordResetConfirmView'
+    'PasswordResetConfirmView',
+    'UserProfileView',
 ] 
